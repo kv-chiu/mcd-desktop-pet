@@ -4,7 +4,31 @@ import {
   BindResultData,
   MyCouponItem,
   TimeData,
+  NutritionItem,
+  PointsAccountData,
+  LotteryInfoData,
+  OrderItem,
 } from '../types/mcp';
+
+/**
+ * 提取 MCP Result 中的主要文本内容
+ */
+export function extractTextFromResult(result: any): string {
+  if (!result) return '';
+  if (typeof result === 'string') return result;
+
+  // 标准 MCP 工具响应: content: [{ type: 'text', text: '...' }]
+  if (Array.isArray(result.content)) {
+    return result.content
+      .map((item: any) => (item?.type === 'text' ? item.text : JSON.stringify(item)))
+      .join('\n');
+  }
+
+  if (result.text) return String(result.text);
+  if (result.message) return String(result.message);
+
+  return JSON.stringify(result, null, 2);
+}
 
 export function parseTimeData(structured: any, text: string): TimeData | null {
   if (structured?.data) {
@@ -19,6 +43,19 @@ export function parseTimeData(structured: any, text: string): TimeData | null {
       // ignore
     }
   }
+
+  // 从文本匹配时间
+  const dateMatch = text.match(/(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}日?)/);
+  const timeMatch = text.match(/(\d{1,2}:\d{2}(?::\d{2})?)/);
+  const weekMatch = text.match(/(星期[一二三四五六日天]|周[一二三四五六日天])/);
+  if (dateMatch || timeMatch) {
+    return {
+      formatted: `${dateMatch ? dateMatch[1] : ''} ${timeMatch ? timeMatch[1] : ''}`.trim(),
+      date: dateMatch ? dateMatch[1] : undefined,
+      dayOfWeek: weekMatch ? weekMatch[1] : undefined,
+    };
+  }
+
   return null;
 }
 
@@ -97,7 +134,6 @@ export function parseMyCoupons(text: string): { count: string; coupons: MyCoupon
   const count = countMatch ? countMatch[1] : '0';
 
   const coupons: MyCouponItem[] = [];
-  // 匹配 **优惠**: ¥数字 和 **有效期**: 格式
   const regex =
     /##\s*(.+?)[\n\r][\s\S]*?\*\*优惠\*\*:\s*¥?(\d+(?:\.\d+)?)[^\n]*[\s\S]*?\*\*有效期\*\*:\s*([^\n]+)[\s\S]*?(?:\*\*标签\*\*:\s*([^\n]+))?[\s\S]*?<img src="([^"]+)"/g;
   let match: RegExpExecArray | null;
@@ -129,7 +165,6 @@ export function parseMyCoupons(text: string): { count: string; coupons: MyCoupon
 
 export function parseValidityDates(validity: string): { start: Date; end: Date } | null {
   if (!validity) return null;
-  // 格式: 2026-01-15 00:00-2026-01-21 23:59 或 2026-01-19 10:45-2026-01-23 23:59 周一、二...
   const match = validity.match(/(\d{4}-\d{2}-\d{2})[^-]*-\s*(\d{4}-\d{2}-\d{2})/);
   if (!match) return null;
 
@@ -166,4 +201,129 @@ export function parseBindResult(text: string): BindResultData {
     isAllSuccess,
     coupons,
   };
+}
+
+/**
+ * 营养成分列表解析 (表格/列表文本)
+ */
+export function parseNutritionFoods(text: string): NutritionItem[] {
+  const items: NutritionItem[] = [];
+
+  // 1. 尝试匹配 Markdown 表格
+  const tableRows = text.split('\n').filter((l) => l.trim().startsWith('|') && !l.includes('---'));
+  if (tableRows.length > 1) {
+    for (let i = 1; i < tableRows.length; i++) {
+      const cols = tableRows[i].split('|').map((c) => c.trim()).filter(Boolean);
+      if (cols.length >= 2) {
+        items.push({
+          name: cols[0],
+          energyKcal: cols[1],
+          protein: cols[2] || '',
+          fat: cols[3] || '',
+          carbs: cols[4] || '',
+          sodium: cols[5] || '',
+        });
+      }
+    }
+    if (items.length > 0) return items;
+  }
+
+  // 2. 尝试从标题块解析
+  const blockRegex = /###?\s*(.+?)[\r\n]+([\s\S]*?)(?=(?:###?|$))/g;
+  let blockMatch: RegExpExecArray | null;
+  while ((blockMatch = blockRegex.exec(text)) !== null) {
+    const name = blockMatch[1].trim();
+    const content = blockMatch[2];
+    const kcal = content.match(/能量[：:]\s*([\d.]+\s*(?:kcal|千卡|kJ|千焦)?)/i)?.[1];
+    const protein = content.match(/蛋白质[：:]\s*([\d.]+\s*g?)/i)?.[1];
+    const fat = content.match(/脂肪[：:]\s*([\d.]+\s*g?)/i)?.[1];
+    const carbs = content.match(/碳水化合物[：:]\s*([\d.]+\s*g?)/i)?.[1];
+    const sodium = content.match(/钠[：:]\s*([\d.]+\s*mg?)/i)?.[1];
+
+    if (name) {
+      items.push({
+        name,
+        energyKcal: kcal,
+        protein,
+        fat,
+        carbs,
+        sodium,
+        rawText: content.trim(),
+      });
+    }
+  }
+
+  return items;
+}
+
+/**
+ * 我的积分账户解析
+ */
+export function parsePointsAccount(text: string): PointsAccountData {
+  const avail =
+    text.match(/可用积分[：:]\s*(\d+)/)?.[1] ||
+    text.match(/当前积分[：:]\s*(\d+)/)?.[1] ||
+    text.match(/积分[：:]\s*(\d+)/)?.[1];
+
+  const total = text.match(/累计积分[：:]\s*(\d+)/)?.[1];
+  const frozen = text.match(/冻结积分[：:]\s*(\d+)/)?.[1];
+  const expiring = text.match(/(?:即将过期|年底过期)[：:]\s*(\d+)/)?.[1];
+  const expireDate = text.match(/过期时间[：:]\s*([^\n\r]+)/)?.[1];
+
+  return {
+    availablePoints: avail || '0',
+    totalPoints: total,
+    frozenPoints: frozen,
+    expiringPoints: expiring,
+    expireDate,
+    rawText: text,
+  };
+}
+
+/**
+ * 积分抽奖信息解析
+ */
+export function parseLotteryInfo(text: string): LotteryInfoData {
+  const title = text.match(/(?:活动名称|抽奖活动)[：:]\s*([^\n\r]+)/)?.[1] || '麦当劳积分抽奖';
+  const status = text.match(/状态[：:]\s*([^\n\r]+)/)?.[1] || '进行中';
+  const cost = text.match(/(?:消耗积分|每次消耗)[：:]\s*(\d+)/)?.[1];
+  const chances = text.match(/(?:剩余次数|可用抽奖次数)[：:]\s*(\d+)/)?.[1];
+
+  return {
+    title,
+    status,
+    costPoints: cost,
+    remainingChances: chances,
+    rawText: text,
+  };
+}
+
+/**
+ * 历史订单列表解析
+ */
+export function parseOrderList(text: string): OrderItem[] {
+  const orders: OrderItem[] = [];
+  const orderBlocks = text.split(/(?:###|\*\*订单编号|\n---)/);
+
+  for (const block of orderBlocks) {
+    const idMatch = block.match(/(?:订单(?:编号|号)?)[：:]\s*([A-Za-z0-9_-]+)/);
+    if (idMatch) {
+      const orderId = idMatch[1];
+      const status = block.match(/状态[：:]\s*([^\n\r]+)/)?.[1]?.trim();
+      const amount = block.match(/(?:实付|总额|金额)[：:]\s*¥?([\d.]+)/)?.[1];
+      const time = block.match(/时间[：:]\s*([^\n\r]+)/)?.[1]?.trim();
+      const store = block.match(/门店[：:]\s*([^\n\r]+)/)?.[1]?.trim();
+
+      orders.push({
+        orderId,
+        status,
+        totalAmount: amount ? `¥${amount}` : undefined,
+        createTime: time,
+        storeName: store,
+        rawText: block.trim(),
+      });
+    }
+  }
+
+  return orders;
 }
