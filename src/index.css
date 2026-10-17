@@ -1,0 +1,320 @@
+@import '@radix-ui/themes/styles.css';
+
+:root {
+  /* ========================================================
+     1. Strict 3-Tier Font Sizes (L: 18px, M: 14px, S: 12px)
+     ======================================================== */
+  --font-size-l: 18px;
+  --font-size-m: 14px;
+  --font-size-s: 12px;
+
+  --line-height-l: 1.35;
+  --line-height-m: 1.45;
+  --line-height-s: 1.35;
+
+  /* Font Families */
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "PingFang SC", "Hiragino Sans GB", "Inter", "Microsoft YaHei", sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Monaco, monospace;
+
+  /* ========================================================
+     2. Apple-like Frosted Glass & Surface Design Tokens
+     ======================================================== */
+  --bg-app: #09090b;
+  --bg-surface: #121216;
+  --bg-surface-elevated: #18181d;
+  --bg-surface-active: #22222a;
+  --bg-glass: rgba(18, 18, 22, 0.75);
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(250, 204, 21, 0.5);
+  --border-active: rgba(255, 255, 255, 0.16);
+
+  --text-primary: #ededed;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+
+  /* McDonald's Elegant Gold (Amber 500/400) */
+  --accent-gold: #f59e0b;
+  --accent-gold-soft: rgba(245, 158, 11, 0.12);
+  --accent-gold-border: rgba(245, 158, 11, 0.28);
+
+  --status-success: #34d399;
+  --status-success-soft: rgba(52, 211, 153, 0.12);
+  --status-error: #f87171;
+  --status-error-soft: rgba(248, 113, 113, 0.12);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+
+  --blur-glass: 16px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-m);
+  line-height: var(--line-height-m);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-full);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* ========================================================
+   Strict Font Size Utility Classes
+   ======================================================== */
+.font-l {
+  font-size: var(--font-size-l);
+  line-height: var(--line-height-l);
+}
+.font-m {
+  font-size: var(--font-size-m);
+  line-height: var(--line-height-m);
+}
+.font-s {
+  font-size: var(--font-size-s);
+  line-height: var(--line-height-s);
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* ========================================================
+   Layout & Cards
+   ======================================================== */
+.app-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+.frosted-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(var(--blur-glass));
+  -webkit-backdrop-filter: blur(var(--blur-glass));
+  background: var(--bg-glass);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.frosted-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.frosted-card-interactive {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.frosted-card-interactive:hover {
+  background: var(--bg-surface-elevated);
+  border-color: var(--border-active);
+  transform: translateY(-1px);
+}
+.frosted-card-interactive.active {
+  background: var(--bg-surface-elevated);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 1px var(--accent-gold-border);
+}
+
+/* Input & Select */
+.apple-input {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-m);
+  line-height: var(--line-height-m);
+  color: var(--text-primary);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.apple-input:focus {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px var(--accent-gold-soft);
+}
+.apple-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Buttons */
+.apple-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-m);
+  font-weight: 500;
+  padding: 8px 16px;
+  background: var(--accent-gold);
+  color: #000;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.apple-btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+  box-shadow: 0 0 16px var(--accent-gold-soft);
+}
+.apple-btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.apple-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-s);
+  font-weight: 500;
+  padding: 6px 12px;
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.apple-btn-secondary:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--bg-surface-active);
+  border-color: var(--border-active);
+}
+
+/* Badges */
+.apple-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-s);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+}
+.apple-badge-gold {
+  background: var(--accent-gold-soft);
+  color: var(--accent-gold);
+  border-color: var(--accent-gold-border);
+}
+.apple-badge-success {
+  background: var(--status-success-soft);
+  color: var(--status-success);
+  border-color: rgba(52, 211, 153, 0.25);
+}
+.apple-badge-error {
+  background: var(--status-error-soft);
+  color: var(--status-error);
+  border-color: rgba(248, 113, 113, 0.25);
+}
+
+/* Segmented Control */
+.segmented-control {
+  display: inline-flex;
+  padding: 3px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  gap: 2px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.segmented-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: var(--font-size-s);
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.segmented-item:hover {
+  color: var(--text-primary);
+}
+.segmented-item.active {
+  color: var(--text-primary);
+  background: var(--bg-surface-elevated);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Code block */
+.apple-code-block {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-s);
+  line-height: var(--line-height-s);
+  background: #060608;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  color: #c4c4cc;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Grid presets */
+.grid-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.grid-bento {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin {
+  animation: spin 1s linear infinite;
+}

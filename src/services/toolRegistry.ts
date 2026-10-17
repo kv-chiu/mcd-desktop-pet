@@ -9,14 +9,14 @@ export interface CategoryInfo {
 }
 
 export const CATEGORIES: CategoryInfo[] = [
-  { key: 'all', nameZh: '全部工具', nameEn: 'All Tools', icon: '⚡', description: '所有麦当劳官方 MCP 工具' },
-  { key: 'coupons', nameZh: '优惠券', nameEn: 'Coupons', icon: '🏷️', description: '麦麦省券查询、一键领券及门店可用券' },
-  { key: 'daily', nameZh: '日常日历', nameEn: 'Daily & Calendar', icon: '📅', description: '营销活动日历与系统精准时间' },
-  { key: 'order', nameZh: '点餐外送', nameEn: 'Ordering & Delivery', icon: '🍔', description: '门店查询、菜单选品、地址管理、订单创建与历史' },
-  { key: 'nutrition', nameZh: '营养信息', nameEn: 'Nutrition', icon: '🥗', description: '麦当劳餐品热量、卡路里与各营养元素' },
-  { key: 'mall', nameZh: '积分商城', nameEn: 'Points Mall', icon: '💰', description: '积分账户查询、商城商品兑换及商城订单' },
-  { key: 'lottery', nameZh: '积分抽奖', nameEn: 'Lottery', icon: '🎡', description: '积分抽奖活动、在线抽奖与我的奖品列表' },
-  { key: 'party', nameZh: '主题派对', nameEn: 'Party & Events', icon: '🎈', description: '麦当劳生日派对、品鉴会城市门店预约与下单' },
+  { key: 'all', nameZh: '全部工具', nameEn: 'All Tools', icon: 'zap', description: '所有麦当劳官方 MCP 工具' },
+  { key: 'coupons', nameZh: '优惠券', nameEn: 'Coupons', icon: 'ticket', description: '麦麦省券查询、一键领券及门店可用券' },
+  { key: 'daily', nameZh: '日常日历', nameEn: 'Daily & Calendar', icon: 'calendar', description: '营销活动日历与系统精准时间' },
+  { key: 'order', nameZh: '点餐外送', nameEn: 'Ordering & Delivery', icon: 'utensils', description: '门店查询、菜单选品、地址管理、订单创建与历史' },
+  { key: 'nutrition', nameZh: '营养信息', nameEn: 'Nutrition', icon: 'activity', description: '麦当劳餐品热量、卡路里与各营养元素' },
+  { key: 'mall', nameZh: '积分商城', nameEn: 'Points Mall', icon: 'coins', description: '积分账户查询、商城商品兑换及商城订单' },
+  { key: 'lottery', nameZh: '积分抽奖', nameEn: 'Lottery', icon: 'sparkles', description: '积分抽奖活动、在线抽奖与我的奖品列表' },
+  { key: 'party', nameZh: '主题派对', nameEn: 'Party & Events', icon: 'party-popper', description: '麦当劳生日派对、品鉴会城市门店预约与下单' },
 ];
 
 export const OFFICIAL_TOOLS: ToolMetadata[] = [
@@ -29,7 +29,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Retrieves nutritional data for common McDonald’s menu items, including energy, protein, fat, carbohydrates, sodium, and calcium.',
     category: 'nutrition',
     categoryZh: '营养信息',
-    icon: '🥗',
+    icon: 'activity',
     params: [
       {
         name: 'keyword',
@@ -52,7 +52,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries the user’s saved delivery addresses for selecting a delivery destination when placing a delivery order.',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '🛵',
+    icon: 'truck',
     params: [],
     exampleArgs: {},
   },
@@ -64,7 +64,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Creates a new delivery address when the user has no saved address or needs to add another one.',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '➕',
+    icon: 'plus',
     params: [
       {
         name: 'address',
@@ -114,7 +114,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries stores near the user’s delivery address that can fulfill a delivery order.',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '🏪',
+    icon: 'store',
     params: [
       {
         name: 'address',
@@ -145,7 +145,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries meal assistance services supported by the store for corporate group meal scenarios.',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '🤝',
+    icon: 'handshake',
     params: [
       {
         name: 'storeId',
@@ -166,7 +166,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries McDonald’s restaurants near the address provided by the user.',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '📍',
+    icon: 'map-pin',
     params: [
       {
         name: 'address',
@@ -211,7 +211,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries the coupons available to the user in the specified store for selecting discounts when ordering.',
     category: 'coupons',
     categoryZh: '优惠券',
-    icon: '🏬',
+    icon: 'store',
     params: [
       {
         name: 'storeId',
@@ -245,7 +245,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries the available menu items (categories, product codes, tags) in the specified store for item selection.',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '🍔',
+    icon: 'utensils',
     params: [
       {
         name: 'storeId',
@@ -278,7 +278,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries details and combo item composition by product code, showing included items and substitution options.',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '🔍',
+    icon: 'search',
     params: [
       {
         name: 'storeId',
@@ -308,7 +308,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Calculates subtotal, delivery fee, discounts, and total price based on selected items and optional coupons.',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '🧮',
+    icon: 'calculator',
     params: [
       {
         name: 'storeId',
@@ -359,7 +359,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Creates an order using store details, dining method, and product list; returns order details and payment link.',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '🛍️',
+    icon: 'shopping-bag',
     params: [
       {
         name: 'storeId',
@@ -417,7 +417,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Cancels a food order when the user requests cancellation.',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '❌',
+    icon: 'x-circle',
     params: [
       {
         name: 'orderId',
@@ -445,7 +445,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries order status, items, and delivery tracking to check progress or confirm details.',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '🧾',
+    icon: 'receipt',
     params: [
       {
         name: 'orderId',
@@ -465,7 +465,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries recent in-store and delivery order history (excluding points mall orders).',
     category: 'order',
     categoryZh: '点餐与外送',
-    icon: '📜',
+    icon: 'scroll',
     params: [
       {
         name: 'page',
@@ -494,7 +494,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries McDonald’s China monthly marketing campaign calendar, including ongoing, past, and upcoming events.',
     category: 'daily',
     categoryZh: '日常日历',
-    icon: '📅',
+    icon: 'calendar',
     params: [
       {
         name: 'month',
@@ -514,7 +514,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Returns current full time information so the client and LLM know the exact current time and date.',
     category: 'daily',
     categoryZh: '日常日历',
-    icon: '🕒',
+    icon: 'clock',
     params: [],
     exampleArgs: {},
   },
@@ -528,7 +528,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries the list of Mai-Mai coupons currently available for the user to claim.',
     category: 'coupons',
     categoryZh: '优惠券',
-    icon: '🏷️',
+    icon: 'ticket',
     params: [],
     exampleArgs: {},
   },
@@ -540,7 +540,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Automatically claims all currently available McDonald’s coupons for the user in one click.',
     category: 'coupons',
     categoryZh: '优惠券',
-    icon: '⚡',
+    icon: 'zap',
     params: [],
     exampleArgs: {},
   },
@@ -552,7 +552,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries all valid coupons in the user’s account.',
     category: 'coupons',
     categoryZh: '优惠券',
-    icon: '🎟️',
+    icon: 'ticket',
     params: [],
     exampleArgs: {},
   },
@@ -566,7 +566,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries user points account details, including available points, cumulative points, frozen points, and expiring points.',
     category: 'mall',
     categoryZh: '积分与商城',
-    icon: '💰',
+    icon: 'coins',
     params: [],
     exampleArgs: {},
   },
@@ -578,7 +578,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries items available in the Mai-Mai Mall for points redemption or cash purchase.',
     category: 'mall',
     categoryZh: '积分与商城',
-    icon: '🛒',
+    icon: 'shopping-cart',
     params: [
       {
         name: 'category',
@@ -605,7 +605,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries detailed mall product information (images, points cost, validity, descriptions).',
     category: 'mall',
     categoryZh: '积分与商城',
-    icon: '📦',
+    icon: 'package',
     params: [
       {
         name: 'productId',
@@ -625,7 +625,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Redeems points for virtual or physical items, deducting points and issuing coupons or creating delivery fulfillment.',
     category: 'mall',
     categoryZh: '积分与商城',
-    icon: '🎁',
+    icon: 'gift',
     params: [
       {
         name: 'productId',
@@ -659,7 +659,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries Mall purchase and redemption order history within the past year.',
     category: 'mall',
     categoryZh: '积分与商城',
-    icon: '📋',
+    icon: 'clipboard-list',
     params: [
       {
         name: 'page',
@@ -686,7 +686,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries detailed information for a Mall order, including points paid, cash amount, and status.',
     category: 'mall',
     categoryZh: '积分与商城',
-    icon: '🔍',
+    icon: 'search',
     params: [
       {
         name: 'orderId',
@@ -708,7 +708,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries current points lottery activity info, including status, prize pool, cost rules, and available chances.',
     category: 'lottery',
     categoryZh: '积分抽奖',
-    icon: '🎡',
+    icon: 'sparkles',
     params: [
       {
         name: 'activityId',
@@ -728,7 +728,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Executes a points lottery draw, consuming points or chances, returning win status and prize data.',
     category: 'lottery',
     categoryZh: '积分抽奖',
-    icon: '🎲',
+    icon: 'dices',
     params: [
       {
         name: 'activityId',
@@ -748,7 +748,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries all prize records won in lottery activities, paginated in reverse chronological order.',
     category: 'lottery',
     categoryZh: '积分抽奖',
-    icon: '🏆',
+    icon: 'trophy',
     params: [
       {
         name: 'page',
@@ -777,7 +777,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries list of cities available for the themed party / event product.',
     category: 'party',
     categoryZh: '主题派对',
-    icon: '🏙️',
+    icon: 'building-2',
     params: [
       {
         name: 'productId',
@@ -797,7 +797,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries stores in the specified city that host the themed event.',
     category: 'party',
     categoryZh: '主题派对',
-    icon: '🎪',
+    icon: 'tent',
     params: [
       {
         name: 'cityId',
@@ -824,7 +824,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries available booking dates for the party in the specified store.',
     category: 'party',
     categoryZh: '主题派对',
-    icon: '🗓️',
+    icon: 'calendar-days',
     params: [
       {
         name: 'storeId',
@@ -850,7 +850,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Queries available time sessions for the specified store and date.',
     category: 'party',
     categoryZh: '主题派对',
-    icon: '⏰',
+    icon: 'alarm-clock',
     params: [
       {
         name: 'storeId',
@@ -877,7 +877,7 @@ export const OFFICIAL_TOOLS: ToolMetadata[] = [
     descriptionEn: 'Creates a themed event order after selecting city, store, date, and session.',
     category: 'party',
     categoryZh: '主题派对',
-    icon: '🎈',
+    icon: 'party-popper',
     params: [
       {
         name: 'storeId',
