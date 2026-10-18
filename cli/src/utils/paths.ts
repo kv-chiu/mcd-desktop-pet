@@ -59,12 +59,33 @@ export function findServerEntry(): ServerLocation | null {
   candidates.push(path.resolve(__dirname, '../../../server'));
   // From cli/src or cli/dist -> root/server
   candidates.push(path.resolve(__dirname, '../../server'));
+  // Same directory as CLI (e.g. portable bundle dist)
+  candidates.push(__dirname);
+  candidates.push(path.resolve(__dirname, '../server'));
   // From cwd
   candidates.push(path.resolve(process.cwd(), 'server'));
   candidates.push(path.resolve(process.cwd()));
 
   for (const dir of candidates) {
     if (!fs.existsSync(dir)) continue;
+
+    const bundlePath = path.join(dir, 'server.bundle.mjs');
+    if (fs.existsSync(bundlePath)) {
+      return {
+        serverDir: dir,
+        entryScript: bundlePath,
+        isTypeScript: false,
+      };
+    }
+
+    const distBundlePath = path.join(dir, 'dist', 'bundle', 'server.bundle.mjs');
+    if (fs.existsSync(distBundlePath)) {
+      return {
+        serverDir: dir,
+        entryScript: distBundlePath,
+        isTypeScript: false,
+      };
+    }
 
     const distPath = path.join(dir, 'dist', 'index.js');
     if (fs.existsSync(distPath)) {

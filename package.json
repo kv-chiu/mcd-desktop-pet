@@ -15,6 +15,13 @@
     "cli": "node cli/dist/index.js",
     "build:cli": "pnpm -C cli build",
     "test": "pnpm -r test",
-    "dev:desktop": "godot --path desktop/"
+    "dev:desktop": "godot --path desktop/",
+    "bundle:server": "esbuild server/src/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/bundle/server.bundle.mjs",
+    "bundle:cli": "esbuild cli/src/index.ts --bundle --platform=node --target=node20 --format=esm --banner:js=\"#!/usr/bin/env node\" --outfile=dist/bundle/cli.bundle.mjs",
+    "bundle": "pnpm bundle:server && pnpm bundle:cli",
+    "release": "python3 scripts/build-release.py"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }
