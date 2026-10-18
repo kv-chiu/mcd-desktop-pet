@@ -34,6 +34,117 @@ export function extractTextFromContent(result: any): string {
 /**
  * 解析优惠券领取统计
  */
+export function tryExtractJson(text: string): Record<string, any> | null {
+  if (!text) return null;
+  const trimmed = text.trim();
+  if ((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      return typeof parsed === 'object' && parsed !== null ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      return typeof parsed === 'object' && parsed !== null ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * 提取结构化业务字段（优先解析显式布尔字段、状态码与错误消息，拒绝仅凭缺少中文关键词推断成功）
+ */
+export function analyzeExplicitBusinessFields(payload: any): {
+  isExplicitFailure: boolean;
+  isExplicitSuccess: boolean;
+  message?: string;
+  code?: number | string;
+} {
+  if (!payload || typeof payload !== 'object') {
+    return { isExplicitFailure: false, isExplicitSuccess: false };
+  }
+
+  const rawMessage =
+    payload.message ||
+    payload.msg ||
+    payload.error?.message ||
+    (typeof payload.error === 'string' ? payload.error : undefined) ||
+    payload.errMsg ||
+    payload.description;
+  const message = typeof rawMessage === 'string' ? rawMessage.trim() : undefined;
+
+  // 1. 显式失败信号（例如 {"success": false, "message": "请先登录"} 或 code != 0/200）
+  if (payload.success === false || payload.isError === true) {
+    return { isExplicitFailure: true, isExplicitSuccess: false, message, code: payload.code };
+  }
+  if (
+    payload.status === 'fail' ||
+    payload.status === 'failed' ||
+    payload.status === 'error' ||
+    payload.status === 'failure'
+  ) {
+    return { isExplicitFailure: true, isExplicitSuccess: false, message, code: payload.code };
+  }
+  if (payload.error && payload.error !== false) {
+    return { isExplicitFailure: true, isExplicitSuccess: false, message, code: payload.code };
+  }
+  if (
+    payload.code !== undefined &&
+    payload.code !== null &&
+    payload.code !== 0 &&
+    payload.code !== 200 &&
+    payload.code !== '0' &&
+    payload.code !== '200'
+  ) {
+    return { isExplicitFailure: true, isExplicitSuccess: false, message, code: payload.code };
+  }
+  if (
+    payload.result &&
+    typeof payload.result === 'object' &&
+    (payload.result.success === false || payload.result.isError === true)
+  ) {
+    return {
+      isExplicitFailure: true,
+      isExplicitSuccess: false,
+      message: payload.result.message || message,
+      code: payload.result.code,
+    };
+  }
+  if (payload.data && typeof payload.data === 'object' && payload.data.success === false) {
+    return {
+      isExplicitFailure: true,
+      isExplicitSuccess: false,
+      message: payload.data.message || message,
+      code: payload.data.code,
+    };
+  }
+
+  // 2. 显式成功信号
+  if (payload.success === true) {
+    return { isExplicitFailure: false, isExplicitSuccess: true, message, code: payload.code };
+  }
+  if (payload.status === 'success' || payload.status === 'ok') {
+    return { isExplicitFailure: false, isExplicitSuccess: true, message, code: payload.code };
+  }
+  if (
+    (payload.code === 0 || payload.code === 200 || payload.code === '0' || payload.code === '200') &&
+    !payload.error
+  ) {
+    return { isExplicitFailure: false, isExplicitSuccess: true, message, code: payload.code };
+  }
+
+  return { isExplicitFailure: false, isExplicitSuccess: false, message, code: payload.code };
+}
+
+/**
+ * 解析优惠券领取统计
+ */
 export function parseBindResultStats(text: string): {
   successCount: number;
   failCount: number;
@@ -210,6 +321,12 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
     }
   } else {
     // 工具层执行成功 (isError === false)，进一步深度分析业务实际结果
+    // 优先解析明确业务字段（如 success, code, status, error, message），无法确认时保留未知状态
+    const structuredPayload =
+      tryExtractJson(rawText) ||
+      (callResult?.data && typeof callResult.data === 'object' ? callResult.data : null);
+    const { isExplicitFailure, isExplicitSuccess, message } = analyzeExplicitBusinessFields(structuredPayload);
+
     if (toolName === 'auto-bind-coupons' || toolName === 'exchange-point-coupon') {
       const stats = parseBindResultStats(rawText);
 
@@ -219,9 +336,24 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
         rawText.includes('领取失败') ||
         rawText.includes('暂无可领取的优惠券') ||
         rawText.includes('无可领优惠券') ||
-        rawText.includes('没有可领取的券');
+        rawText.includes('没有可领取的券') ||
+        rawText.includes('未登录') ||
+        rawText.includes('请先登录');
 
-      if (stats.hasMatched) {
+      if (isExplicitFailure) {
+        business = {
+          outcome: 'failure',
+          summary: message || rawText.trim() || '优惠券领取失败',
+          successCount: 0,
+          failCount: 0,
+        };
+        petFeedback = {
+          shouldFeedback: true,
+          action: 'idle',
+          duration: 3.5,
+          speech: `主人，优惠券领取遇到问题：${business.summary}`,
+        };
+      } else if (stats.hasMatched) {
         if (stats.successCount > 0 && stats.failCount === 0) {
           // 全部成功
           business = {
@@ -271,7 +403,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
       } else if (hasExplicitFailureKeyword) {
         business = {
           outcome: 'failure',
-          summary: rawText.trim() || '优惠券领取失败',
+          summary: message || rawText.trim() || '优惠券领取失败',
           successCount: 0,
           failCount: 0,
         };
@@ -281,7 +413,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           duration: 3.5,
           speech: `主人，优惠券领取遇到问题：${business.summary}`,
         };
-      } else if (rawText.includes('couponCode') || rawText.includes('img src=')) {
+      } else if (isExplicitSuccess || rawText.includes('couponCode') || rawText.includes('img src=')) {
         // 返回了优惠券卡片内容，判定为完全成功
         business = {
           outcome: 'full_success',
@@ -294,10 +426,10 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           speech: '主人！麦当劳优惠券已全部为您自动领取好啦！🎉',
         };
       } else {
-        // 未知返回或无可领券
+        // 未知返回或无可领券，保留未知状态
         business = {
-          outcome: 'failure',
-          summary: rawText.trim() || '暂无可领取的优惠券',
+          outcome: 'unknown',
+          summary: message || rawText.trim() || '未确认优惠券领取结果',
           successCount: 0,
           failCount: 0,
         };
@@ -305,22 +437,44 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           shouldFeedback: true,
           action: 'idle',
           duration: 3.0,
-          speech: '主人，当前没有可领取的优惠券哦~',
+          speech: '主人，未能确认优惠券领取结果，请前往麦当劳卡包查看~',
         };
       }
     } else if (toolName === 'create-order') {
-      const isFailedOrder =
+      const hasChineseFailureKeyword =
         !rawText.trim() ||
         rawText.includes('失败') ||
         rawText.includes('打烊') ||
         rawText.includes('售罄') ||
         rawText.includes('不足') ||
-        rawText.includes('错误');
+        rawText.includes('错误') ||
+        rawText.includes('未登录') ||
+        rawText.includes('请先登录');
 
-      if (isFailedOrder) {
+      const hasOrderSuccessEntity = Boolean(
+        structuredPayload &&
+          (structuredPayload.orderId ||
+            structuredPayload.orderNo ||
+            structuredPayload.orderNumber ||
+            structuredPayload.pickupCode ||
+            structuredPayload.pickUpCode ||
+            structuredPayload.takeCode ||
+            structuredPayload.data?.orderId ||
+            structuredPayload.data?.orderNo)
+      );
+
+      const hasChineseSuccessKeyword =
+        rawText.includes('订单已创建') ||
+        rawText.includes('下单成功') ||
+        rawText.includes('创建成功') ||
+        rawText.includes('取餐码') ||
+        rawText.includes('取餐号') ||
+        /订单[ID号编号]+[:：\s]*[A-Za-z0-9]+/i.test(rawText);
+
+      if (isExplicitFailure || hasChineseFailureKeyword) {
         business = {
           outcome: 'failure',
-          summary: rawText.trim() || '订单创建失败：未返回有效订单内容',
+          summary: message || rawText.trim() || '订单创建失败',
         };
         petFeedback = {
           shouldFeedback: true,
@@ -328,7 +482,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           duration: 3.5,
           speech: `主人，下单未能成功：${business.summary}`,
         };
-      } else {
+      } else if (isExplicitSuccess || hasOrderSuccessEntity || hasChineseSuccessKeyword) {
         business = {
           outcome: 'full_success',
           summary: '订单已成功创建',
@@ -339,19 +493,49 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           duration: 4.0,
           speech: '订单已创建！麦麦美味正在加速准备中~🍔',
         };
+      } else {
+        // 无法从结构化字段或明确凭据确认成功时，保留未知状态，绝不虚假庆祝
+        business = {
+          outcome: 'unknown',
+          summary: message || rawText.trim() || '订单状态未知，未确认下单凭据',
+        };
+        petFeedback = {
+          shouldFeedback: true,
+          action: 'idle',
+          duration: 3.5,
+          speech: '主人，订单请求已发送，但未收到明确确认凭据，请在麦当劳 App 中核对~',
+        };
       }
     } else if (toolName === 'mall-create-order') {
-      const isFailedMallOrder =
+      const hasChineseFailureKeyword =
         !rawText.trim() ||
         rawText.includes('失败') ||
         rawText.includes('不足') ||
         rawText.includes('售罄') ||
-        rawText.includes('上限');
+        rawText.includes('上限') ||
+        rawText.includes('错误') ||
+        rawText.includes('未登录') ||
+        rawText.includes('请先登录');
 
-      if (isFailedMallOrder) {
+      const hasMallSuccessEntity = Boolean(
+        structuredPayload &&
+          (structuredPayload.orderId ||
+            structuredPayload.orderNo ||
+            structuredPayload.exchangeId ||
+            structuredPayload.data?.orderId ||
+            structuredPayload.data?.exchangeId)
+      );
+
+      const hasChineseSuccessKeyword =
+        rawText.includes('兑换成功') ||
+        rawText.includes('成功兑换') ||
+        rawText.includes('扣除积分') ||
+        /兑换[ID号编号]+[:：\s]*[A-Za-z0-9]+/i.test(rawText);
+
+      if (isExplicitFailure || hasChineseFailureKeyword) {
         business = {
           outcome: 'failure',
-          summary: rawText.trim() || '积分商城兑换失败：未返回有效兑换内容',
+          summary: message || rawText.trim() || '积分商城兑换失败',
         };
         petFeedback = {
           shouldFeedback: true,
@@ -359,7 +543,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           duration: 3.5,
           speech: `积分兑换未成功：${business.summary}`,
         };
-      } else {
+      } else if (isExplicitSuccess || hasMallSuccessEntity || hasChineseSuccessKeyword) {
         business = {
           outcome: 'full_success',
           summary: '积分商品兑换成功',
@@ -370,19 +554,51 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           duration: 3.5,
           speech: '积分商品兑换成功啦！🎁',
         };
+      } else {
+        business = {
+          outcome: 'unknown',
+          summary: message || rawText.trim() || '积分兑换状态未知，未确认兑换结果',
+        };
+        petFeedback = {
+          shouldFeedback: true,
+          action: 'idle',
+          duration: 3.5,
+          speech: '主人，积分兑换已提交，但未能确认结果，请稍后前往麦当劳 App 核对~',
+        };
       }
     } else if (toolName === 'draw-lottery') {
-      const isFailedLottery =
+      const hasChineseFailureKeyword =
         !rawText.trim() ||
         rawText.includes('失败') ||
         rawText.includes('已达上限') ||
         rawText.includes('积分不足') ||
-        rawText.includes('已结束');
+        rawText.includes('已结束') ||
+        rawText.includes('错误') ||
+        rawText.includes('未登录') ||
+        rawText.includes('请先登录');
 
-      if (isFailedLottery) {
+      const hasLotterySuccessEntity = Boolean(
+        structuredPayload &&
+          (structuredPayload.prize ||
+            structuredPayload.prizeName ||
+            structuredPayload.prizes ||
+            structuredPayload.award ||
+            structuredPayload.lotteryResult ||
+            structuredPayload.data?.prize)
+      );
+
+      const hasChineseSuccessKeyword =
+        rawText.includes('恭喜获得') ||
+        rawText.includes('中奖') ||
+        rawText.includes('抽中') ||
+        rawText.includes('抽奖成功') ||
+        rawText.includes('获得好礼') ||
+        rawText.includes('谢谢参与');
+
+      if (isExplicitFailure || hasChineseFailureKeyword) {
         business = {
           outcome: 'failure',
-          summary: rawText.trim() || '抽奖未成功：未返回有效抽奖结果',
+          summary: message || rawText.trim() || '抽奖未成功',
         };
         petFeedback = {
           shouldFeedback: true,
@@ -390,7 +606,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           duration: 3.0,
           speech: `抽奖未成功：${business.summary}`,
         };
-      } else {
+      } else if (isExplicitSuccess || hasLotterySuccessEntity || hasChineseSuccessKeyword) {
         business = {
           outcome: 'full_success',
           summary: '抽奖完成',
@@ -401,19 +617,43 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           duration: 3.5,
           speech: '抽奖完成！快看看抽中了什么好礼吧~✨',
         };
+      } else {
+        business = {
+          outcome: 'unknown',
+          summary: message || rawText.trim() || '抽奖状态未知，无法确认抽奖结果',
+        };
+        petFeedback = {
+          shouldFeedback: true,
+          action: 'idle',
+          duration: 3.0,
+          speech: '主人，抽奖请求已发送，请前往麦当劳 App 查看抽奖记录~',
+        };
       }
     } else {
-      // 查询类工具等常规工具
-      business = {
-        outcome: 'neutral',
-        summary: '执行完成',
-      };
-      petFeedback = {
-        shouldFeedback: false,
-        action: 'idle',
-        duration: 0,
-        speech: '',
-      };
+      // 查询类等常规工具：若包含明确失败指示则判定为 failure，否则 neutral
+      if (isExplicitFailure) {
+        business = {
+          outcome: 'failure',
+          summary: message || rawText.trim() || '查询失败',
+        };
+        petFeedback = {
+          shouldFeedback: false,
+          action: 'idle',
+          duration: 0,
+          speech: '',
+        };
+      } else {
+        business = {
+          outcome: 'neutral',
+          summary: '执行完成',
+        };
+        petFeedback = {
+          shouldFeedback: false,
+          action: 'idle',
+          duration: 0,
+          speech: '',
+        };
+      }
     }
   }
 

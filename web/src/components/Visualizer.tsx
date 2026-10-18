@@ -699,6 +699,8 @@ export const Visualizer: React.FC<VisualizerProps> = ({
                 ? 'apple-badge-gold'
                 : layers.business.outcome === 'failure'
                 ? 'apple-badge-error'
+                : layers.business.outcome === 'unknown'
+                ? 'apple-badge-warning'
                 : 'apple-badge'
             }`}
           >
@@ -709,6 +711,8 @@ export const Visualizer: React.FC<VisualizerProps> = ({
               ? '部分成功'
               : layers.business.outcome === 'failure'
               ? '业务失败'
+              : layers.business.outcome === 'unknown'
+              ? '结果未知'
               : '常规完成'}
           </span>
         </div>

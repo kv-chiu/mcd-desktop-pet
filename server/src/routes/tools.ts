@@ -84,9 +84,13 @@ toolRoutes.post('/:name', async (c) => {
     // 1. 传输成功: HTTP 200 已满足
     // 2. JSON-RPC 成功: 协议层已正常通信
     // 3. 工具执行成功: result.isError 为 false 且 tool.success 为 true
-    // 4. 业务部分成功/完全成功: outcome 不为 failure
+    // 4. 业务部分成功/完全成功: outcome 为 full_success, partial_success 或 neutral (排查 failure 与 unknown)
     const isToolSuccess = !result.isError && (result.layers ? result.layers.tool.success : true);
-    const isBusinessSuccess = result.layers ? result.layers.business.outcome !== 'failure' : true;
+    const isBusinessSuccess = result.layers
+      ? result.layers.business.outcome === 'full_success' ||
+        result.layers.business.outcome === 'partial_success' ||
+        result.layers.business.outcome === 'neutral'
+      : true;
     const isPartialSuccess = result.layers?.business.outcome === 'partial_success';
     const overallSuccess = Boolean(isToolSuccess && isBusinessSuccess);
 
@@ -133,7 +137,11 @@ toolRoutes.post('/simulate', async (c) => {
     }
 
     const isToolSuccess = !result.isError && (result.layers ? result.layers.tool.success : true);
-    const isBusinessSuccess = result.layers ? result.layers.business.outcome !== 'failure' : true;
+    const isBusinessSuccess = result.layers
+      ? result.layers.business.outcome === 'full_success' ||
+        result.layers.business.outcome === 'partial_success' ||
+        result.layers.business.outcome === 'neutral'
+      : true;
     const isPartialSuccess = result.layers?.business.outcome === 'partial_success';
     const overallSuccess = Boolean(isToolSuccess && isBusinessSuccess);
 
@@ -197,7 +205,11 @@ toolRoutes.post('/quick/auto-bind', async (c) => {
     }
 
     const isToolSuccess = !result.isError && (result.layers ? result.layers.tool.success : true);
-    const isBusinessSuccess = result.layers ? result.layers.business.outcome !== 'failure' : true;
+    const isBusinessSuccess = result.layers
+      ? result.layers.business.outcome === 'full_success' ||
+        result.layers.business.outcome === 'partial_success' ||
+        result.layers.business.outcome === 'neutral'
+      : true;
     const isPartialSuccess = result.layers?.business.outcome === 'partial_success';
     const overallSuccess = Boolean(isToolSuccess && isBusinessSuccess);
 

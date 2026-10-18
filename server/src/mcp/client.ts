@@ -311,6 +311,24 @@ export class McpGatewayClient {
         }
         if (options.mockScenario === 'rpc-empty-body') {
           resp = {} as any;
+        } else if (options.mockScenario === 'login-required') {
+          resp = {
+            jsonrpc: '2.0',
+            id: Date.now(),
+            result: {
+              content: [{ type: 'text', text: '{"success":false,"message":"请先登录"}' }],
+              isError: false,
+            },
+          };
+        } else if (options.mockScenario === 'unknown-unconfirmed') {
+          resp = {
+            jsonrpc: '2.0',
+            id: Date.now(),
+            result: {
+              content: [{ type: 'text', text: '已收到业务请求，等待系统调度处理' }],
+              isError: false,
+            },
+          };
         } else if (options.mockScenario === 'rpc-error') {
           resp = {
             jsonrpc: '2.0',
@@ -367,10 +385,12 @@ export class McpGatewayClient {
         throw rpcErr;
       }
 
-      const isError = evaluation.tool.isError;
+      const isError = evaluation.tool.isError || evaluation.business.outcome === 'failure';
       const errorMsg =
         evaluation.tool.error ||
-        (evaluation.business.outcome === 'failure' ? evaluation.business.summary : undefined);
+        (evaluation.business.outcome === 'failure' || evaluation.business.outcome === 'unknown'
+          ? evaluation.business.summary
+          : undefined);
 
       const result: ExecuteResult = {
         toolName: actualToolName,

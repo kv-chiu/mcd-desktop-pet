@@ -332,6 +332,129 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
     assert.ok(!evalNoContent.petFeedback?.speech.includes('订单已创建'));
   });
 
+  await t.test('12. 业务显式字段解析：工具返回 {"success":false,"message":"请先登录"} 时，严格判定为失败，严禁播报成功', async () => {
+    emittedPetActions.length = 0;
+
+    // A. 针对 create-order
+    const resOrder = await app.request('/api/tools/create-order', {
+      method: 'POST',
+      headers: {
+        'x-mock-scenario': 'login-required',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ storeId: '1001' }),
+    });
+
+    const bodyOrder = await resOrder.json();
+    assert.equal(bodyOrder.success, false, '返回 {"success":false} 时顶级 success 必须为 false');
+    assert.equal(bodyOrder.layers.business.outcome, 'failure', '业务层必须判定为 failure');
+    assert.equal(bodyOrder.layers.business.summary, '请先登录', '业务层应提取出明确的 message 字段');
+    assert.ok(
+      !emittedPetActions.some((e) => e.speech?.includes('订单已创建')),
+      '桌宠绝不得播报“订单已创建”！'
+    );
+    assert.ok(
+      emittedPetActions.some((e) => e.speech?.includes('请先登录')),
+      '桌宠应提示未登录'
+    );
+
+    // B. 单独评估 mall-create-order
+    const evalMall = evaluateToolLayers({
+      toolName: 'mall-create-order',
+      httpStatus: 200,
+      rpcResponse: {
+        jsonrpc: '2.0',
+        id: 2,
+        result: {
+          content: [{ type: 'text', text: '{"success":false,"message":"请先登录"}' }],
+          isError: false,
+        },
+      },
+    });
+    assert.equal(evalMall.business.outcome, 'failure');
+    assert.equal(evalMall.business.summary, '请先登录');
+    assert.ok(!evalMall.petFeedback?.speech.includes('积分商品兑换成功啦'));
+    assert.equal(evalMall.petFeedback?.action, 'idle');
+
+    // C. 单独评估 draw-lottery
+    const evalLottery = evaluateToolLayers({
+      toolName: 'draw-lottery',
+      httpStatus: 200,
+      rpcResponse: {
+        jsonrpc: '2.0',
+        id: 3,
+        result: {
+          content: [{ type: 'text', text: '{"success":false,"message":"请先登录"}' }],
+          isError: false,
+        },
+      },
+    });
+    assert.equal(evalLottery.business.outcome, 'failure');
+    assert.equal(evalLottery.business.summary, '请先登录');
+    assert.ok(!evalLottery.petFeedback?.speech.includes('抽奖完成'));
+    assert.equal(evalLottery.petFeedback?.action, 'idle');
+
+    // D. 单独评估 auto-bind-coupons
+    const evalCoupon = evaluateToolLayers({
+      toolName: 'auto-bind-coupons',
+      httpStatus: 200,
+      rpcResponse: {
+        jsonrpc: '2.0',
+        id: 4,
+        result: {
+          content: [{ type: 'text', text: '{"success":false,"message":"请先登录"}' }],
+          isError: false,
+        },
+      },
+    });
+    assert.equal(evalCoupon.business.outcome, 'failure');
+    assert.equal(evalCoupon.business.summary, '请先登录');
+    assert.ok(!evalCoupon.petFeedback?.speech.includes('自动领取好啦'));
+  });
+
+  await t.test('13. 无法确认业务结果时保留未知状态 (unknown)：绝不误判为完全成功，严禁触发跳跃与庆祝', async () => {
+    emittedPetActions.length = 0;
+
+    const res = await app.request('/api/tools/create-order', {
+      method: 'POST',
+      headers: {
+        'x-mock-scenario': 'unknown-unconfirmed',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ storeId: '1001' }),
+    });
+
+    const body = await res.json();
+    assert.equal(body.success, false, '状态为 unknown 时顶级 success 必须为 false (不得误判为 true)');
+    assert.equal(body.layers.business.outcome, 'unknown', '业务层必须保留为 unknown 状态');
+    assert.ok(
+      !emittedPetActions.some((e) => e.action === 'jump' || e.action === 'wave'),
+      '绝不得触发庆祝动作 (jump / wave)'
+    );
+    assert.ok(
+      !emittedPetActions.some((e) => e.speech?.includes('订单已创建')),
+      '绝不得播报“订单已创建”'
+    );
+  });
+
+  await t.test('14. 显式业务成功凭证解析：包含 orderId 时确认为完全成功', () => {
+    const evalSuccess = evaluateToolLayers({
+      toolName: 'create-order',
+      httpStatus: 200,
+      rpcResponse: {
+        jsonrpc: '2.0',
+        id: 5,
+        result: {
+          content: [{ type: 'text', text: '{"success":true,"orderId":"MCD20261019001","takeCode":"A102"}' }],
+          isError: false,
+        },
+      },
+    });
+    assert.equal(evalSuccess.business.outcome, 'full_success');
+    assert.equal(evalSuccess.petFeedback?.action, 'wave');
+    assert.ok(evalSuccess.petFeedback?.speech.includes('订单已创建'));
+  });
+
   // 恢复
   wsHub.emitPetAction = originalEmitPetAction;
 });

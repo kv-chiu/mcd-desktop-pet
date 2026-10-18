@@ -165,8 +165,8 @@ export interface ToolExecutionStatus {
   error?: string;
 }
 
-// 4. 业务结果层状态 (实际业务结果驱动：区分完全成功、部分成功与业务失败)
-export type BusinessOutcome = 'full_success' | 'partial_success' | 'failure' | 'neutral';
+// 4. 业务结果层状态 (实际业务结果驱动：区分完全成功、部分成功、业务失败与结果未知)
+export type BusinessOutcome = 'full_success' | 'partial_success' | 'failure' | 'neutral' | 'unknown';
 
 export interface BusinessStatus {
   outcome: BusinessOutcome;
