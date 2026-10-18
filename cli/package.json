@@ -1,0 +1,28 @@
+{
+  "name": "@mcd/cli",
+  "version": "1.0.0",
+  "description": "McDonalds Desktop Pet CLI",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "mcd": "./dist/index.js",
+    "mcd-pet": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "tsx --test test/**/*.test.ts"
+  },
+  "dependencies": {
+    "@mcd/shared": "workspace:*",
+    "commander": "^13.1.0",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

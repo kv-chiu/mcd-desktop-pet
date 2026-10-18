@@ -2,6 +2,7 @@ packages:
   - 'server'
   - 'web'
   - 'shared'
+  - 'cli'
 
 catalog:
   typescript: ~5.7.2
