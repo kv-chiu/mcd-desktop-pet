@@ -265,6 +265,46 @@ export class McpGatewayClient {
           },
         };
 
+      case 'calendar-tool-error':
+        return {
+          jsonrpc: '2.0',
+          id: Date.now(),
+          result: {
+            content: [{ type: 'text', text: '获取活动日历失败：服务暂不可用' }],
+            isError: true,
+          },
+        };
+
+      case 'calendar-success':
+        return {
+          jsonrpc: '2.0',
+          id: Date.now(),
+          result: {
+            content: [{ type: 'text', text: '{"2026-10-19":[{"title":"半价麦辣鸡腿堡","type":"discount"}]}' }],
+            isError: false,
+          },
+        };
+
+      case 'nutrition-tool-error':
+        return {
+          jsonrpc: '2.0',
+          id: Date.now(),
+          result: {
+            content: [{ type: 'text', text: '查询营养成分失败：未找到对应餐品' }],
+            isError: true,
+          },
+        };
+
+      case 'nutrition-success':
+        return {
+          jsonrpc: '2.0',
+          id: Date.now(),
+          result: {
+            content: [{ type: 'text', text: '{"name":"巨无霸","energy":"2120kJ","protein":"26.5g"}' }],
+            isError: false,
+          },
+        };
+
       default:
         throw new Error(`未知的模拟场景: ${scenario}`);
     }

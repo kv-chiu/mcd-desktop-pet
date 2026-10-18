@@ -665,3 +665,21 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
     petFeedback,
   };
 }
+
+/**
+ * 判断业务结果是否属于成功范畴（完全成功、部分成功或中性状态，排除失败与未知结果）
+ */
+export function isBusinessSuccess(outcome?: BusinessOutcome): boolean {
+  return outcome === 'full_success' || outcome === 'partial_success' || outcome === 'neutral';
+}
+
+/**
+ * 统一综合判断工具执行层与业务结果层是否均成功
+ */
+export function isOverallSuccess(layers?: ExecutionLayers, isError?: boolean): boolean {
+  if (isError) return false;
+  if (!layers) return !isError;
+  const isToolSuccess = layers.tool?.success !== false && !layers.tool?.isError;
+  const isBizSuccess = isBusinessSuccess(layers.business?.outcome);
+  return Boolean(isToolSuccess && isBizSuccess);
+}

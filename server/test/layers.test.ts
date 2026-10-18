@@ -478,4 +478,82 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
     assert.equal(evalSuccess.petFeedback?.action, 'wave');
     assert.ok(evalSuccess.petFeedback?.speech.includes('订单已创建'));
   });
+
+  await t.test('15. 快捷接口 /api/tools/quick/calendar 失败时（layers.tool.success=false、业务为 failure），顶层 success 必须为 false 且包含 error', async () => {
+    const res = await app.request('/api/tools/quick/calendar', {
+      method: 'GET',
+      headers: {
+        'x-mock-scenario': 'calendar-tool-error',
+      },
+    });
+
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.success, false, '日历快捷接口在工具失败时顶层 success 必须为 false');
+    assert.equal(body.layers.tool.success, false);
+    assert.equal(body.layers.business.outcome, 'failure');
+    assert.ok(body.error, '失败时必须返回具体错误信息');
+    assert.ok(body.error.includes('获取活动日历失败'));
+  });
+
+  await t.test('16. 快捷接口 /api/tools/quick/nutrition 失败时（layers.tool.success=false、业务为 failure），顶层 success 必须为 false 且包含 error', async () => {
+    const res = await app.request('/api/tools/quick/nutrition?keyword=汉堡', {
+      method: 'GET',
+      headers: {
+        'x-mock-scenario': 'nutrition-tool-error',
+      },
+    });
+
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.success, false, '营养快捷接口在工具失败时顶层 success 必须为 false');
+    assert.equal(body.layers.tool.success, false);
+    assert.equal(body.layers.business.outcome, 'failure');
+    assert.ok(body.error, '失败时必须返回具体错误信息');
+    assert.ok(body.error.includes('查询营养成分失败'));
+  });
+
+  await t.test('17. 快捷接口 /api/tools/quick/calendar 与 /quick/nutrition 成功时，顶层 success 为 true', async () => {
+    const resCal = await app.request('/api/tools/quick/calendar', {
+      method: 'GET',
+      headers: {
+        'x-mock-scenario': 'calendar-success',
+      },
+    });
+    const bodyCal = await resCal.json();
+    assert.equal(bodyCal.success, true);
+    assert.equal(bodyCal.layers.tool.success, true);
+
+    const resNut = await app.request('/api/tools/quick/nutrition?keyword=巨无霸', {
+      method: 'GET',
+      headers: {
+        'x-mock-scenario': 'nutrition-success',
+      },
+    });
+    const bodyNut = await resNut.json();
+    assert.equal(bodyNut.success, true);
+    assert.equal(bodyNut.layers.tool.success, true);
+  });
+
+  await t.test('18. 验证固定路由优先级：POST /api/tools/simulate 必须命中模拟处理器，不得被通配路由 /:name 遮挡误当成 simulate 工具调用', async () => {
+    const res = await app.request('/api/tools/simulate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        scenario: 'coupon-tool-error',
+        toolName: 'auto-bind-coupons',
+      }),
+    });
+
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.scenario, 'coupon-tool-error', '响应必须包含 simulate 处理器特有的 scenario 字段');
+    assert.equal(body.data.toolName, 'auto-bind-coupons', '实际执行的工具必须是 body 中指定的 auto-bind-coupons，绝不是名为 simulate 的虚假工具');
+    assert.equal(body.success, false);
+    assert.equal(body.layers.tool.success, false);
+    assert.equal(body.layers.business.outcome, 'failure');
+  });
 });
+
