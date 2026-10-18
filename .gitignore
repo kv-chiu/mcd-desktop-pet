@@ -32,3 +32,7 @@ lerna-debug.log*
 
 # Codegraph
 .codegraph/
+
+# Godot
+.godot/
+*.translation

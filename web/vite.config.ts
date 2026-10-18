@@ -13,6 +13,10 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/mcp/, '/mcp-servers/mcd-mcp'),
         secure: true,
       },
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+      },
     },
   },
 });

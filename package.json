@@ -1,25 +1,17 @@
 {
-  "name": "mcd-mcp-webui",
+  "name": "mcd-desktop-pet",
   "private": true,
   "version": "1.0.0",
-  "type": "module",
   "packageManager": "pnpm@12.10.1",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@radix-ui/themes": "^3.3.0",
-    "lucide-react": "^1.58.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
-  },
-  "devDependencies": {
-    "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
-    "@vitejs/plugin-react": "^4.3.4",
-    "typescript": "~5.7.2",
-    "vite": "^6.0.7"
+    "build": "pnpm -r build",
+    "dev": "pnpm -C web dev",
+    "dev:web": "pnpm -C web dev",
+    "build:web": "pnpm -C web build",
+    "preview:web": "pnpm -C web preview",
+    "dev:server": "pnpm -C server dev",
+    "build:server": "pnpm -C server build",
+    "start:server": "pnpm -C server start",
+    "dev:desktop": "godot --path desktop/"
   }
 }

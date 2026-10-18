@@ -1,0 +1,30 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://scenes/pet.tscn" id="2_pet"]
+[ext_resource type="PackedScene" path="res://scenes/speech_bubble.tscn" id="3_speech"]
+[ext_resource type="Script" path="res://scripts/ws_client.gd" id="4_ws"]
+[ext_resource type="Script" path="res://scripts/window_manager.gd" id="5_win"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_main")
+
+[node name="Pet" parent="." instance=ExtResource("2_pet")]
+
+[node name="SpeechBubble" parent="." instance=ExtResource("3_speech")]
+
+[node name="WsClient" type="Node" parent="."]
+script = ExtResource("4_ws")
+
+[node name="WindowManager" type="Node" parent="."]
+script = ExtResource("5_win")
+
+[node name="ContextMenu" type="PopupMenu" parent="."]
+size = Vector2i(160, 160)

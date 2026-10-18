@@ -1,0 +1,48 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/speech_bubble.gd" id="1_speech"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bubble"]
+bg_color = Color(1, 1, 1, 0.95)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.15)
+shadow_size = 4
+shadow_offset = Vector2(0, 2)
+
+[node name="SpeechBubble" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 40.0
+offset_top = 20.0
+offset_right = 280.0
+offset_bottom = 85.0
+script = ExtResource("1_speech")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bubble")
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 8
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.15, 0.15, 0.15, 1)
+theme_override_font_sizes/font_size = 13
+text = "麦麦桌宠已就绪！"
+autowrap_mode = 2
+
+[node name="Timer" type="Timer" parent="."]
+one_shot = true
