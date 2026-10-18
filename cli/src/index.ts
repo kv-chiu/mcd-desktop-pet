@@ -8,6 +8,24 @@ import {
   showServerStatus,
   showServerLogs,
 } from './commands/server.js';
+import {
+  handlePetAction,
+  handlePetSpeak,
+  handlePetInteract,
+  handlePetState,
+} from './commands/pet.js';
+import {
+  handleListTools,
+  handleExecuteTool,
+  handleQuickCoupons,
+  handleQuickAutoBind,
+  handleQuickNutrition,
+  handleQuickCalendar,
+} from './commands/tools.js';
+import {
+  handleGetConfig,
+  handleSetToken,
+} from './commands/config.js';
 import type {
   StartOptions,
   StopOptions,
@@ -20,7 +38,7 @@ const program = new Command();
 
 program
   .name('mcd')
-  .description('🍔 麦当劳桌宠命令行工具 (McDonald\'s Desktop Pet CLI) - 服务启停与 Agent 控制中枢')
+  .description('🍔 麦当劳桌宠命令行工具 (McDonald\'s Desktop Pet CLI) - 桌面宠物与 MCP 工具统一控制中枢')
   .version('1.0.0');
 
 // ===================== 顶层服务启停快捷指令 =====================
@@ -72,6 +90,141 @@ program
   .option('-f, --follow', '持续追踪最新日志输出')
   .action(async (options: LogsOptions) => {
     await showServerLogs(options);
+  });
+
+// ===================== 桌宠动作与表现指令 =====================
+
+const petCmd = program
+  .command('pet [action]')
+  .description('操控桌面宠物动作 (wave, jump, idle, speak) 与气泡对话')
+  .option('-s, --speech <text>', '伴随动作显示的气泡文字')
+  .option('-d, --duration <seconds>', '动作/气泡持续时间（秒）', '3.0')
+  .option('--json', '以结构化 JSON 格式输出结果')
+  .action(async (action = 'wave', options) => {
+    await handlePetAction(action, options);
+  });
+
+petCmd
+  .command('speak <text>')
+  .description('让桌宠弹出说话气泡')
+  .option('-d, --duration <seconds>', '气泡停留时间（秒）', '4.0')
+  .option('--json', '以结构化 JSON 格式输出结果')
+  .action(async (text, options) => {
+    await handlePetSpeak(text, options);
+  });
+
+petCmd
+  .command('interact')
+  .description('与桌宠进行亲密互动 (抚摸并提升好感度)')
+  .option('--json', '以结构化 JSON 格式输出结果')
+  .action(async (options) => {
+    await handlePetInteract(options);
+  });
+
+petCmd
+  .command('state')
+  .description('查看桌宠当前好感度、心情与等级')
+  .option('--json', '以结构化 JSON 格式输出结果')
+  .action(async (options) => {
+    await handlePetState(options);
+  });
+
+// 快捷顶级互动别名
+program
+  .command('speak <text>')
+  .description('让桌宠弹出说话气泡 (快捷指令)')
+  .option('-d, --duration <seconds>', '气泡停留时间（秒）', '4.0')
+  .option('--json', '以结构化 JSON 格式输出')
+  .action(async (text, options) => {
+    await handlePetSpeak(text, options);
+  });
+
+program
+  .command('interact')
+  .description('与桌宠互动 (抚摸并提升好感度)')
+  .option('--json', '以结构化 JSON 格式输出')
+  .action(async (options) => {
+    await handlePetInteract(options);
+  });
+
+// ===================== 麦当劳优惠券指令 =====================
+
+const couponCmd = program
+  .command('coupon')
+  .description('麦当劳优惠券管理命令组 (查看可用券、一键自动领券)');
+
+couponCmd
+  .command('list')
+  .description('查询当前账户可用的优惠券列表')
+  .option('--json', '以结构化 JSON 格式输出')
+  .action(async (options) => {
+    await handleQuickCoupons(options);
+  });
+
+couponCmd
+  .command('auto-bind')
+  .description('一键自动领取/绑定所有可领取的优惠券')
+  .option('--json', '以结构化 JSON 格式输出')
+  .action(async (options) => {
+    await handleQuickAutoBind(options);
+  });
+
+// ===================== 营养成分与活动日历 =====================
+
+program
+  .command('nutrition [keyword]')
+  .description('查询麦当劳餐品营养成分与热量数据 (例如: mcd nutrition 巨无霸)')
+  .option('--json', '以结构化 JSON 格式输出')
+  .action(async (keyword, options) => {
+    await handleQuickNutrition(keyword, options);
+  });
+
+program
+  .command('calendar [month]')
+  .description('查询麦当劳官方当月活动日历 (例如: mcd calendar 2026-10)')
+  .option('--json', '以结构化 JSON 格式输出')
+  .action(async (month, options) => {
+    await handleQuickCalendar(month, options);
+  });
+
+// ===================== MCP 通用工具调用 =====================
+
+program
+  .command('tools')
+  .description('查询麦当劳 33 项官方 MCP 工具清单与参数定义')
+  .option('--json', '以结构化 JSON 格式输出')
+  .action(async (options) => {
+    await handleListTools(options);
+  });
+
+program
+  .command('tool <name> [params]')
+  .description('执行指定的 MCP 工具 (例如: mcd tool list-nutrition-foods \'{"keyword":"汉堡"}\')')
+  .option('--json', '以结构化 JSON 格式输出')
+  .action(async (name, params, options) => {
+    await handleExecuteTool(name, params, options);
+  });
+
+// ===================== 配置管理指令 =====================
+
+const configCmd = program
+  .command('config')
+  .description('桌宠与 MCP 服务配置管理');
+
+configCmd
+  .command('get')
+  .description('查看当前配置')
+  .option('--json', '以结构化 JSON 格式输出')
+  .action(async (options) => {
+    await handleGetConfig(options);
+  });
+
+configCmd
+  .command('set-token <token>')
+  .description('设置麦当劳 MCP Authorization Token')
+  .option('--json', '以结构化 JSON 格式输出')
+  .action(async (token, options) => {
+    await handleSetToken(token, options);
   });
 
 // ===================== server 命名空间分组指令 =====================

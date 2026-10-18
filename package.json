@@ -16,8 +16,8 @@
     "build:cli": "pnpm -C cli build",
     "test": "pnpm -r test",
     "dev:desktop": "godot --path desktop/",
-    "bundle:server": "esbuild server/src/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/bundle/server.bundle.mjs",
-    "bundle:cli": "esbuild cli/src/index.ts --bundle --platform=node --target=node20 --format=esm --banner:js=\"#!/usr/bin/env node\" --outfile=dist/bundle/cli.bundle.mjs",
+    "bundle:server": "esbuild server/src/index.ts --bundle --platform=node --target=node20 --format=esm --banner:js=\"import { createRequire as __createRequire } from 'module'; const require = __createRequire(import.meta.url);\" --outfile=dist/bundle/server.bundle.mjs",
+    "bundle:cli": "esbuild cli/src/index.ts --bundle --platform=node --target=node20 --format=esm --banner:js=\"import { createRequire as __createRequire } from 'module'; const require = __createRequire(import.meta.url);\" --outfile=dist/bundle/cli.bundle.mjs",
     "bundle": "pnpm bundle:server && pnpm bundle:cli",
     "release": "python3 scripts/build-release.py"
   },

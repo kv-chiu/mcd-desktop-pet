@@ -120,6 +120,8 @@ def bundle_server_and_cli():
     bundle_dir = os.path.join(DIST_DIR, "bundle")
     os.makedirs(bundle_dir, exist_ok=True)
 
+    banner_arg = '--banner:js=import { createRequire as __createRequire } from "module"; const require = __createRequire(import.meta.url);'
+
     # 1. 打包 server
     server_entry = os.path.join(PROJECT_ROOT, "server", "src", "index.ts")
     server_out = os.path.join(bundle_dir, "server.bundle.mjs")
@@ -129,6 +131,7 @@ def bundle_server_and_cli():
         "--platform=node",
         "--target=node20",
         "--format=esm",
+        banner_arg,
         f"--outfile={server_out}"
     ])
 
@@ -141,7 +144,7 @@ def bundle_server_and_cli():
         "--platform=node",
         "--target=node20",
         "--format=esm",
-        '--banner:js=#!/usr/bin/env node',
+        banner_arg,
         f"--outfile={cli_out}"
     ])
 
@@ -432,8 +435,13 @@ def assemble_platform_package(target_platform, version):
         else:
             log_warn(f"未在 {bin_src} 找到 Linux 桌宠客户端产物")
 
-    # 5. 写入启动/停止脚本与使用文档
+    # 5. 写入一键 CLI 快捷入口 (替代复杂底层原生命令)
     if target_platform in ("macos", "linux"):
+        mcd_sh = os.path.join(pkg_dir, "mcd")
+        with open(mcd_sh, "w", encoding="utf-8") as f:
+            f.write("#!/usr/bin/env bash\nDIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\nexec node \"$DIR/server/cli.bundle.mjs\" \"$@\"\n")
+        os.chmod(mcd_sh, 0o755)
+
         start_sh = os.path.join(pkg_dir, "start.sh")
         with open(start_sh, "w", encoding="utf-8") as f:
             f.write(START_SH_TEMPLATE)
@@ -445,6 +453,8 @@ def assemble_platform_package(target_platform, version):
         os.chmod(stop_sh, 0o755)
 
     if target_platform == "windows":
+        with open(os.path.join(pkg_dir, "mcd.bat"), "w", encoding="utf-8") as f:
+            f.write("@echo off\r\nnode \"%~dp0server\\cli.bundle.mjs\" %*\r\n")
         with open(os.path.join(pkg_dir, "start.bat"), "w", encoding="utf-8") as f:
             f.write(START_BAT_TEMPLATE)
         with open(os.path.join(pkg_dir, "stop.bat"), "w", encoding="utf-8") as f:
