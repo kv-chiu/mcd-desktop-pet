@@ -104,18 +104,27 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
         message: transport.error || '传输层失败，无法进行 RPC 解析',
       },
     };
-  } else if (rpcResponse?.error) {
+  } else if (!rpcResponse || typeof rpcResponse !== 'object' || Object.keys(rpcResponse).length === 0) {
+    rpc = {
+      success: false,
+      error: {
+        code: -32700,
+        message: '未获取到有效的 JSON-RPC 响应体 (响应体为空或非对象)',
+      },
+    };
+  } else if (rpcResponse.error) {
     rpc = {
       success: false,
       id: rpcResponse.id,
       error: rpcResponse.error,
     };
-  } else if (!rpcResponse) {
+  } else if (!('result' in rpcResponse) || rpcResponse.result === undefined) {
     rpc = {
       success: false,
+      id: rpcResponse.id,
       error: {
-        code: -32700,
-        message: '未获取到有效的 JSON-RPC 响应体',
+        code: -32600,
+        message: '无效的 JSON-RPC 响应结构：缺少 result 或 error 字段',
       },
     };
   } else {
@@ -138,12 +147,19 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
       toolName,
       error: rpc.error?.message || 'RPC 调用未成功，工具未执行',
     };
+  } else if (!callResult || typeof callResult !== 'object' || !Array.isArray(callResult.content)) {
+    tool = {
+      success: false,
+      isError: true,
+      toolName,
+      error: '工具调用返回结果结构无效 (缺少 content 数组)',
+    };
   } else if (isToolError) {
     tool = {
       success: false,
       isError: true,
       toolName,
-      content: callResult?.content,
+      content: callResult.content,
       rawText,
       error: rawText || '工具返回执行错误 (result.isError: true)',
     };
@@ -152,7 +168,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
       success: true,
       isError: false,
       toolName,
-      content: callResult?.content,
+      content: callResult.content,
       rawText,
     };
   }
@@ -294,6 +310,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
       }
     } else if (toolName === 'create-order') {
       const isFailedOrder =
+        !rawText.trim() ||
         rawText.includes('失败') ||
         rawText.includes('打烊') ||
         rawText.includes('售罄') ||
@@ -303,7 +320,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
       if (isFailedOrder) {
         business = {
           outcome: 'failure',
-          summary: rawText.trim() || '订单创建失败',
+          summary: rawText.trim() || '订单创建失败：未返回有效订单内容',
         };
         petFeedback = {
           shouldFeedback: true,
@@ -325,6 +342,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
       }
     } else if (toolName === 'mall-create-order') {
       const isFailedMallOrder =
+        !rawText.trim() ||
         rawText.includes('失败') ||
         rawText.includes('不足') ||
         rawText.includes('售罄') ||
@@ -333,7 +351,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
       if (isFailedMallOrder) {
         business = {
           outcome: 'failure',
-          summary: rawText.trim() || '积分商城兑换失败',
+          summary: rawText.trim() || '积分商城兑换失败：未返回有效兑换内容',
         };
         petFeedback = {
           shouldFeedback: true,
@@ -355,6 +373,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
       }
     } else if (toolName === 'draw-lottery') {
       const isFailedLottery =
+        !rawText.trim() ||
         rawText.includes('失败') ||
         rawText.includes('已达上限') ||
         rawText.includes('积分不足') ||
@@ -363,7 +382,7 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
       if (isFailedLottery) {
         business = {
           outcome: 'failure',
-          summary: rawText.trim() || '抽奖未成功',
+          summary: rawText.trim() || '抽奖未成功：未返回有效抽奖结果',
         };
         petFeedback = {
           shouldFeedback: true,

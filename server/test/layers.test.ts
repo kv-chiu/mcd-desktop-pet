@@ -206,6 +206,132 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
     assert.ok(!emittedPetActions.some((e) => e.speech?.includes('一键领入卡包')));
   });
 
+  await t.test('8. 模拟上游返回 HTTP 400 与响应体 {}：保留状态码 400，拒绝虚假 success，桌宠严禁播报“订单已创建”', async () => {
+    emittedPetActions.length = 0;
+
+    const res = await app.request('/api/tools/create-order', {
+      method: 'POST',
+      headers: {
+        'x-mock-scenario': 'http-400-empty',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ storeId: '1001', meals: [{ id: 'm1', count: 1 }] }),
+    });
+
+    assert.equal(res.status, 400, '必须保留真实的 HTTP 400 状态码，不得误标为 200');
+    const body = await res.json();
+
+    assert.equal(body.success, false, '上游 400 时 success 必须为 false');
+    assert.ok(body.layers, '必须包含四层状态');
+    assert.equal(body.layers.transport.status, 400, '传输层状态码必须保留为 400');
+    assert.equal(body.layers.transport.success, false, '传输层必须标为失败');
+    assert.equal(body.layers.rpc.success, false, 'RPC 层必须标为失败');
+    assert.equal(body.layers.tool.success, false, '工具层必须标为失败');
+    assert.equal(body.layers.business.outcome, 'failure', '业务层必须判定为 failure');
+
+    // 桌宠播报严禁出现“订单已创建”
+    assert.ok(
+      !emittedPetActions.some((e) => e.speech?.includes('订单已创建')),
+      '桌宠绝不得在 400 失败时播报“订单已创建”！'
+    );
+  });
+
+  await t.test('9. 模拟上游返回 HTTP 404 与响应体 {}：保留状态码 404，拒绝虚假 success，桌宠严禁播报“订单已创建”', async () => {
+    emittedPetActions.length = 0;
+
+    const res = await app.request('/api/tools/create-order', {
+      method: 'POST',
+      headers: {
+        'x-mock-scenario': 'http-404-empty',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ storeId: '9999', meals: [{ id: 'm1', count: 1 }] }),
+    });
+
+    assert.equal(res.status, 404, '必须保留真实的 HTTP 404 状态码');
+    const body = await res.json();
+
+    assert.equal(body.success, false);
+    assert.equal(body.layers.transport.status, 404);
+    assert.equal(body.layers.transport.success, false);
+    assert.equal(body.layers.rpc.success, false);
+    assert.equal(body.layers.tool.success, false);
+    assert.equal(body.layers.business.outcome, 'failure');
+
+    assert.ok(
+      !emittedPetActions.some((e) => e.speech?.includes('订单已创建')),
+      '桌宠绝不得在 404 时播报“订单已创建”！'
+    );
+  });
+
+  await t.test('10. 模拟上游返回 HTTP 200 但响应体为 {}（RPC/result 结构缺失）：拒绝虚假 success，桌宠严禁播报“订单已创建”', async () => {
+    emittedPetActions.length = 0;
+
+    const res = await app.request('/api/tools/create-order', {
+      method: 'POST',
+      headers: {
+        'x-mock-scenario': 'rpc-empty-body',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ storeId: '1001' }),
+    });
+
+    const body = await res.json();
+    assert.equal(body.success, false, '响应体为 {} 时缺少 RPC 结构，success 必须为 false');
+    assert.equal(body.layers.transport.success, true, '传输层虽为 200');
+    assert.equal(body.layers.rpc.success, false, 'RPC 层结构校验失败');
+    assert.equal(body.layers.tool.success, false, '工具层未有效执行');
+    assert.equal(body.layers.business.outcome, 'failure', '业务层判定为失败');
+
+    assert.ok(
+      !emittedPetActions.some((e) => e.speech?.includes('订单已创建')),
+      '桌宠绝不得在响应体为空对象时误播报“订单已创建”！'
+    );
+  });
+
+  await t.test('11. evaluateToolLayers 单独校验：HTTP 状态与 RPC/result 结构有效性', () => {
+    // A: 真实状态码 400，响应体 {}
+    const eval400 = evaluateToolLayers({
+      toolName: 'create-order',
+      httpStatus: 400,
+      rpcResponse: {} as any,
+    });
+    assert.equal(eval400.transport.success, false);
+    assert.equal(eval400.transport.status, 400);
+    assert.equal(eval400.rpc.success, false);
+    assert.equal(eval400.tool.success, false);
+    assert.equal(eval400.business.outcome, 'failure');
+    assert.ok(!eval400.petFeedback?.speech.includes('订单已创建'));
+
+    // B: 状态码 200，但响应体为 {}（未包含 result 或 error）
+    const evalEmptyBody = evaluateToolLayers({
+      toolName: 'create-order',
+      httpStatus: 200,
+      rpcResponse: {} as any,
+    });
+    assert.equal(evalEmptyBody.transport.success, true);
+    assert.equal(evalEmptyBody.rpc.success, false);
+    assert.equal(evalEmptyBody.tool.success, false);
+    assert.equal(evalEmptyBody.business.outcome, 'failure');
+    assert.ok(!evalEmptyBody.petFeedback?.speech.includes('订单已创建'));
+
+    // C: 状态码 200，有 jsonrpc 和 id，但 result 缺少 content 数组
+    const evalNoContent = evaluateToolLayers({
+      toolName: 'create-order',
+      httpStatus: 200,
+      rpcResponse: {
+        jsonrpc: '2.0',
+        id: 1,
+        result: {} as any,
+      },
+    });
+    assert.equal(evalNoContent.transport.success, true);
+    assert.equal(evalNoContent.rpc.success, true);
+    assert.equal(evalNoContent.tool.success, false, '缺少 content 数组时工具层应失败');
+    assert.equal(evalNoContent.business.outcome, 'failure');
+    assert.ok(!evalNoContent.petFeedback?.speech.includes('订单已创建'));
+  });
+
   // 恢复
   wsHub.emitPetAction = originalEmitPetAction;
 });

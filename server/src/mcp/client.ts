@@ -86,25 +86,52 @@ export class McpGatewayClient {
 
     if (resp.status === 401) {
       this.resetSession();
-      throw new Error('MCP Token 无效或已过期 (401)，请在官方控制台重新获取并配置');
+      const err: any = new Error('MCP Token 无效或已过期 (401)，请在官方控制台重新获取并配置');
+      err.status = 401;
+      throw err;
     }
 
     if (resp.status === 429) {
-      throw new Error('触发麦当劳官方 MCP 限流保护 (429，超过 600 次/分钟)，请稍后重试');
+      const err: any = new Error('触发麦当劳官方 MCP 限流保护 (429，超过 600 次/分钟)，请稍后重试');
+      err.status = 429;
+      throw err;
     }
 
-    if (!resp.ok && resp.status >= 500) {
+    if (!resp.ok) {
       const errText = await resp.text().catch(() => '');
-      throw new Error(`麦当劳 MCP 服务器错误 (${resp.status}): ${errText || resp.statusText}`);
+      let errMsg = errText.trim() || resp.statusText;
+      try {
+        const parsed = JSON.parse(errText);
+        if (parsed?.error?.message) {
+          errMsg = parsed.error.message;
+        } else if (parsed?.message) {
+          errMsg = parsed.message;
+        }
+      } catch {
+        // fallback to errText
+      }
+      const err: any = new Error(
+        resp.status >= 500
+          ? `麦当劳 MCP 服务器错误 (${resp.status}): ${errMsg || resp.statusText}`
+          : `麦当劳 MCP 请求错误 (${resp.status}): ${errMsg || resp.statusText}`
+      );
+      err.status = resp.status;
+      throw err;
     }
 
     const contentType = resp.headers.get('content-type') || '';
     if (!contentType.includes('application/json')) {
       const text = await resp.text();
-      throw new Error(`MCP 返回非 JSON 格式响应: ${text.slice(0, 200)}`);
+      const err: any = new Error(`MCP 返回非 JSON 格式响应: ${text.slice(0, 200)}`);
+      err.status = resp.status;
+      throw err;
     }
 
-    return resp.json() as Promise<JsonRpcResponse<T>>;
+    const data = (await resp.json()) as JsonRpcResponse<T>;
+    if (data && typeof data === 'object') {
+      (data as any).httpStatus = resp.status;
+    }
+    return data;
   }
 
   /**
@@ -272,7 +299,19 @@ export class McpGatewayClient {
         if (options.mockScenario === 'transport-error') {
           throw new Error('网络连接超时或目标主机不可达 (模拟传输层失败)');
         }
-        if (options.mockScenario === 'rpc-error') {
+        if (options.mockScenario === 'http-400-empty') {
+          const err: any = new Error('麦当劳 MCP 请求错误 (400): Bad Request');
+          err.status = 400;
+          throw err;
+        }
+        if (options.mockScenario === 'http-404-empty') {
+          const err: any = new Error('麦当劳 MCP 请求错误 (404): Not Found');
+          err.status = 404;
+          throw err;
+        }
+        if (options.mockScenario === 'rpc-empty-body') {
+          resp = {} as any;
+        } else if (options.mockScenario === 'rpc-error') {
           resp = {
             jsonrpc: '2.0',
             id: Date.now(),
@@ -301,17 +340,21 @@ export class McpGatewayClient {
 
       const durationMs = Math.round(performance.now() - startTime);
 
+      const httpStatus = typeof (resp as any)?.httpStatus === 'number' ? (resp as any).httpStatus : 200;
+
       // 进行四层状态评估（传输层、RPC 层、工具层、业务层）
       const evaluation = evaluateToolLayers({
         toolName: actualToolName,
         args: cleanArgs,
         rpcResponse: resp,
-        httpStatus: 200,
+        httpStatus,
       });
 
-      // JSON-RPC 协议级错误
-      if (resp.error) {
-        const rpcErr: any = new Error(resp.error.message || 'MCP 执行返回未知协议错误');
+      // JSON-RPC 协议级错误或结构异常
+      if (!evaluation.rpc.success || resp?.error) {
+        const rpcErr: any = new Error(
+          resp?.error?.message || evaluation.rpc.error?.message || 'MCP 执行返回未知协议错误'
+        );
         rpcErr.toolName = actualToolName;
         rpcErr.args = cleanArgs;
         rpcErr.durationMs = durationMs;
@@ -364,12 +407,13 @@ export class McpGatewayClient {
       }
       const durationMs = Math.round(performance.now() - startTime);
 
+      const httpStatus = typeof err.status === 'number' ? err.status : 500;
       const evaluation =
         err.layers ||
         evaluateToolLayers({
           toolName: actualToolName,
           args: cleanArgs,
-          httpStatus: 500,
+          httpStatus,
           transportError: err.message || '调用 MCP 工具异常',
         });
 
