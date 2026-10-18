@@ -131,7 +131,5 @@ func _on_pet_action_received(action: String, duration: float, speech: String, _s
 func _on_pet_speech_received(text: String, duration: float) -> void:
 	speech_bubble.show_speech(text, duration)
 
-func _on_pet_state_received(state: Dictionary) -> void:
-	var mood = state.get("mood", "happy")
-	if mood == "hungry":
-		speech_bubble.show_speech("肚子咕咕叫了，想吃麦麦汉堡~🍔", 3.5)
+func _on_pet_state_received(_state: Dictionary) -> void:
+	pass

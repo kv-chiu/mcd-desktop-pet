@@ -49,30 +49,6 @@ petRoutes.post('/action', async (c) => {
   });
 });
 
-// 喂食桌宠
-petRoutes.post('/feed', async (c) => {
-  const body = await c.req.json().catch(() => ({}));
-  const foodType = (body.food || 'burger') as 'burger' | 'coke' | 'sundae' | 'fries';
-
-  const { state, message } = storage.feedPet(foodType);
-
-  // 广播状态更新
-  wsHub.emitStateUpdate(state);
-
-  // 广播桌宠进食动作
-  const actionType: PetActionType = foodType === 'coke' ? 'drink_coke' : 'eat_burger';
-  wsHub.emitPetAction(actionType, {
-    duration: 3.5,
-    speech: message,
-  });
-
-  return c.json({
-    success: true,
-    message,
-    data: state,
-  });
-});
-
 // 让桌宠说话（显示对话气泡）
 petRoutes.post('/speak', async (c) => {
   const body = await c.req.json().catch(() => ({}));

@@ -11,7 +11,7 @@ export interface AppConfig {
   autoStart: boolean;
 }
 
-export type PetMood = 'happy' | 'normal' | 'hungry' | 'sleepy' | 'celebrating';
+export type PetMood = 'happy' | 'normal' | 'sleepy' | 'celebrating';
 export type PetActionType =
   | 'idle'
   | 'eat_burger'
@@ -24,20 +24,18 @@ export type PetActionType =
 
 export interface PetState {
   name: string;
-  hunger: number; // 0 - 100
   favor: number;  // 0 - 100
   mood: PetMood;
   level: number;
   experience: number;
   currentAction: PetActionType;
-  lastFedTime: string;
   lastInteractedTime: string;
   updatedAt: string;
 }
 
 export interface ActionHistoryRecord {
   id: string;
-  type: 'pet_action' | 'tool_call' | 'feed' | 'system';
+  type: 'pet_action' | 'tool_call' | 'system';
   summary: string;
   details?: any;
   timestamp: string;
@@ -54,13 +52,11 @@ const DEFAULT_CONFIG: AppConfig = {
 
 const DEFAULT_PET_STATE: PetState = {
   name: '麦麦宝',
-  hunger: 80,
   favor: 60,
   mood: 'happy',
   level: 1,
   experience: 0,
   currentAction: 'idle',
-  lastFedTime: new Date().toISOString(),
   lastInteractedTime: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
@@ -131,20 +127,14 @@ export class StorageService {
   }
 
   private applyDecay(state: PetState): PetState {
-    const now = Date.now();
-    const lastFed = new Date(state.lastFedTime).getTime();
-    const hoursSinceFed = Math.max(0, (now - lastFed) / (1000 * 60 * 60));
-
-    // Drop hunger ~ 5 points per hour
-    const hungerLoss = Math.floor(hoursSinceFed * 5);
-    const calculatedHunger = Math.max(0, state.hunger - hungerLoss);
-
     let calculatedMood: PetMood = state.mood;
-    if (calculatedHunger <= 20) {
-      calculatedMood = 'hungry';
-    } else if (state.favor < 30) {
+    if (calculatedMood === 'celebrating') {
+      return state;
+    }
+
+    if (state.favor < 30) {
       calculatedMood = 'sleepy';
-    } else if (state.hunger >= 70 && state.favor >= 60) {
+    } else if (state.favor >= 60) {
       calculatedMood = 'happy';
     } else {
       calculatedMood = 'normal';
@@ -152,7 +142,6 @@ export class StorageService {
 
     return {
       ...state,
-      hunger: calculatedHunger,
       mood: calculatedMood,
     };
   }
@@ -166,9 +155,6 @@ export class StorageService {
     };
 
     // Clamp values
-    if (typeof updated.hunger === 'number') {
-      updated.hunger = Math.min(100, Math.max(0, updated.hunger));
-    }
     if (typeof updated.favor === 'number') {
       updated.favor = Math.min(100, Math.max(0, updated.favor));
     }
@@ -186,60 +172,6 @@ export class StorageService {
       console.error('Error writing pet state:', err);
     }
     return updated;
-  }
-
-  feedPet(foodType: 'burger' | 'coke' | 'sundae' | 'fries'): { state: PetState; message: string } {
-    const current = this.getPetState();
-    let hungerGain = 25;
-    let favorGain = 10;
-    let expGain = 15;
-    let message = '麦麦汉堡大口嚼！好饱呀~';
-
-    switch (foodType) {
-      case 'coke':
-        hungerGain = 15;
-        favorGain = 8;
-        expGain = 10;
-        message = '冰爽可乐吨吨吨！元气满满~';
-        break;
-      case 'sundae':
-        hungerGain = 10;
-        favorGain = 15;
-        expGain = 12;
-        message = '甜蜜新地真好吃！好开心~';
-        break;
-      case 'fries':
-        hungerGain = 20;
-        favorGain = 10;
-        expGain = 12;
-        message = '香脆薯条根根酥脆！美味！';
-        break;
-      case 'burger':
-      default:
-        hungerGain = 30;
-        favorGain = 12;
-        expGain = 20;
-        message = '麦辣鸡腿堡热气腾腾！好满足~';
-        break;
-    }
-
-    const updated = this.updatePetState({
-      hunger: Math.min(100, current.hunger + hungerGain),
-      favor: Math.min(100, current.favor + favorGain),
-      experience: current.experience + expGain,
-      mood: 'happy',
-      currentAction: foodType === 'coke' ? 'drink_coke' : 'eat_burger',
-      lastFedTime: new Date().toISOString(),
-      lastInteractedTime: new Date().toISOString(),
-    });
-
-    this.recordHistory({
-      type: 'feed',
-      summary: `喂食 ${foodType} (+${hungerGain} 饱食度, +${favorGain} 好感度)`,
-      details: { foodType, hungerGain, favorGain },
-    });
-
-    return { state: updated, message };
   }
 
   interactPet(): { state: PetState; message: string } {

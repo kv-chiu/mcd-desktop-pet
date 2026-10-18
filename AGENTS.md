@@ -48,7 +48,7 @@ mcd-desktop-pet/
   * **MCP 协议网关**（`src/mcp/`）：封装麦当劳官方 Streamable HTTP 协议（JSON-RPC 2.0），自动维护握手、`Mcp-Session-Id` 会话、Token 鉴权、限流保护与 33 项官方工具调用。
   * **WebSocket 事件中心**（`src/ws/`）：充当系统 Event Bus。接收来自 Web、CLI 或 Skill 的动作触发请求，实时广播推送给 `desktop` 播放对应动画。
   * **RESTful 业务 API**（`src/routes/`）：对外暴露简化标准的 HTTP 接口（如 `/api/tools/:name`、`/api/pet/action`），供 Web、CLI、Skill 以及第三方客户端调用。
-  * **数据与状态持久化**（`src/storage/`）：统一在用户本地目录（如 `~/.mcd-desktop-pet/`）持久化存储 MCP Token、桌宠状态（饱食度、好感度）、偏好设置与订单历史。
+  * **数据与状态持久化**（`src/storage/`）：统一在用户本地目录（如 `~/.mcd-desktop-pet/`）持久化存储 MCP Token、桌宠状态（好感度、等级与经验）、偏好设置与订单历史。
 
 ### web/
 * **定位**：桌面宠物的**图形化管理控制台**（基于 **React 19 + Vite**）。
