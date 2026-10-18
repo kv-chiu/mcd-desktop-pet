@@ -44,6 +44,15 @@ func _on_drag_started() -> void:
 	pet.interrupt_walk()
 
 func _setup_context_menu() -> void:
+	var font = SystemFont.new()
+	font.font_names = PackedStringArray([
+		"Hiragino Sans GB", "Heiti SC", "STHeiti", "PingFang SC", "Microsoft YaHei", "WenQuanYi Micro Hei", "sans-serif"
+	])
+	var emoji_font = SystemFont.new()
+	emoji_font.font_names = PackedStringArray(["Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"])
+	font.fallbacks = [emoji_font]
+	context_menu.add_theme_font_override("font", font)
+
 	context_menu.clear()
 	context_menu.add_item("🚶 散步走走", 10)
 	context_menu.add_item("🔄 转身翻转", 11)
@@ -69,7 +78,7 @@ func _on_menu_item_selected(id: int) -> void:
 	match id:
 		10:
 			pet.start_random_walk()
-			speech_bubble.show_speech("迈开小短腿，出发去散步咯~🚶", 2.5)
+			speech_bubble.show_speech("迈开小短腿，出发去散步咯~ 🚶", 2.5)
 		11:
 			var new_dir = -pet.facing_direction
 			pet.paper_flip(new_dir)

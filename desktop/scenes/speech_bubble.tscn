@@ -12,6 +12,13 @@ shadow_color = Color(0, 0, 0, 0.15)
 shadow_size = 4
 shadow_offset = Vector2(0, 2)
 
+[sub_resource type="SystemFont" id="SystemFont_emoji"]
+font_names = PackedStringArray("Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji")
+
+[sub_resource type="SystemFont" id="SystemFont_cjk"]
+font_names = PackedStringArray("Hiragino Sans GB", "Heiti SC", "STHeiti", "PingFang SC", "Microsoft YaHei", "WenQuanYi Micro Hei", "sans-serif")
+fallbacks = Array[Font]([SubResource("SystemFont_emoji")])
+
 [node name="SpeechBubble" type="Control"]
 layout_mode = 3
 anchors_preset = 0
@@ -40,6 +47,7 @@ theme_override_constants/margin_bottom = 8
 [node name="Label" type="Label" parent="PanelContainer/MarginContainer"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.15, 0.15, 0.15, 1)
+theme_override_fonts/font = SubResource("SystemFont_cjk")
 theme_override_font_sizes/font_size = 13
 text = "麦麦桌宠已就绪！"
 autowrap_mode = 2
