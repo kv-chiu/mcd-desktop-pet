@@ -1,30 +1,30 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://b3vhlx20ayhcg"]
 
-[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://chqpko80aj0i1" path="res://scripts/main.gd" id="1_main"]
 [ext_resource type="PackedScene" path="res://scenes/pet.tscn" id="2_pet"]
 [ext_resource type="PackedScene" path="res://scenes/speech_bubble.tscn" id="3_speech"]
-[ext_resource type="Script" path="res://scripts/ws_client.gd" id="4_ws"]
-[ext_resource type="Script" path="res://scripts/window_manager.gd" id="5_win"]
+[ext_resource type="Script" uid="uid://c4sh8u484rl3a" path="res://scripts/ws_client.gd" id="4_ws"]
+[ext_resource type="Script" uid="uid://cj6c7k5ss2met" path="res://scripts/window_manager.gd" id="5_win"]
 
-[node name="Main" type="Control"]
+[node name="Main" type="Control" unique_id=1444768598]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 script = ExtResource("1_main")
 
-[node name="Pet" parent="." instance=ExtResource("2_pet")]
+[node name="Pet" parent="." unique_id=1687396168 instance=ExtResource("2_pet")]
 
-[node name="SpeechBubble" parent="." instance=ExtResource("3_speech")]
+[node name="SpeechBubble" parent="." unique_id=76553370 instance=ExtResource("3_speech")]
+layout_mode = 0
 
-[node name="WsClient" type="Node" parent="."]
+[node name="WsClient" type="Node" parent="." unique_id=1714768185]
 script = ExtResource("4_ws")
 
-[node name="WindowManager" type="Node" parent="."]
+[node name="WindowManager" type="Node" parent="." unique_id=1617374344]
 script = ExtResource("5_win")
 
-[node name="ContextMenu" type="PopupMenu" parent="."]
+[node name="ContextMenu" type="PopupMenu" parent="." unique_id=153237160]
 size = Vector2i(160, 160)

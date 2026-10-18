@@ -33,11 +33,44 @@ var is_stopping_walk: bool = false
 var action_name: String = ""
 var action_timer: float = 0.0
 var action_duration: float = 3.0
+var current_breath_y: float = 0.0
+
+# 阴影尺寸与中心配置（可在属性面板或脚本直接调整）
+@export_group("地面阴影设置")
+@export var shadow_width: float = 129.0 # 椭圆宽度
+@export var shadow_height: float = 20.0 # 椭圆高度
+@export var shadow_center_y: float = 291.0 # 椭圆垂直中心位置 (Y，脚底接地线)
+@export var shadow_offset_x: float = 1.0 # 椭圆水平中心偏移 (X，正数偏右，负数偏左)
+@export_range(0.0, 1.0, 0.01) var shadow_opacity: float = 0.25 # 阴影不透明度 (0.0 完全透明 ~ 1.0 最浓)
+@export var shadow_walk_dynamic: bool = true # 角色移动时影子是否随人物动作变化
+@export_range(0.0, 3.0, 0.1) var shadow_walk_intensity: float = 1.0 # 动作变化幅度/强度 (1.0 为标准幅度)
+
+# 60 帧动画步态特征表 (dx: 脚底水平摆动, sx: 跨步宽度缩放, dy: 触地起伏)
+const FEET_METRICS: Array[Vector3] = [
+	Vector3(0.0, 1.0, 0.0), # 01: idle
+	Vector3(0.0, 1.0, -1.0), Vector3(0.0, 1.0, -1.0), Vector3(-0.5, 1.01, -1.0), Vector3(-0.5, 1.01, -1.0), # 02-05
+	Vector3(0.0, 1.01, 0.0), Vector3(0.5, 1.02, 1.0), Vector3(0.5, 1.02, 2.0), Vector3(1.0, 1.03, 2.0), # 06-09
+	Vector3(1.0, 1.01, 1.0), Vector3(0.5, 1.01, 1.0), Vector3(-0.5, 0.99, 1.0), Vector3(-1.0, 0.98, 0.0), # 10-13
+	Vector3(-1.0, 0.96, 0.0), Vector3(-1.5, 0.97, 0.0), Vector3(-1.0, 0.98, 0.0), Vector3(-0.5, 0.99, -1.0), # 14-17
+	Vector3(0.5, 1.01, -1.0), Vector3(0.5, 1.02, -1.0), Vector3(1.0, 1.03, 0.0), Vector3(1.0, 1.03, 0.0), # 18-21
+	Vector3(2.5, 1.06, 0.0), Vector3(1.0, 1.01, -1.0), Vector3(0.5, 1.01, -1.0), Vector3(0.5, 0.99, -2.0), # 22-25
+	Vector3(0.0, 0.98, -2.0), # 26: end of intro
+	Vector3(0.0, 0.98, -2.0), Vector3(0.0, 1.0, 0.0), Vector3(0.5, 1.01, 1.0), Vector3(1.0, 1.01, 1.0), # 27-30: loop start
+	Vector3(1.0, 1.03, 2.0), Vector3(1.0, 1.03, 2.0), Vector3(1.5, 1.02, 2.0), Vector3(1.0, 1.01, 1.0), # 31-34
+	Vector3(0.5, 0.99, 0.0), Vector3(0.0, 0.98, 0.0), Vector3(-0.5, 0.97, 0.0), Vector3(0.0, 0.98, 0.0), # 35-38
+	Vector3(0.5, 1.01, -1.0), Vector3(1.0, 1.01, -1.0), Vector3(1.0, 1.03, 0.0), Vector3(1.0, 1.03, 0.0), # 39-42
+	Vector3(2.5, 1.06, 0.0), Vector3(0.5, 1.02, 0.0), Vector3(1.0, 1.01, -1.0), Vector3(1.0, 1.0, -1.0), # 43-46
+	Vector3(0.5, 0.99, -2.0), Vector3(0.0, 0.98, -2.0), Vector3(0.0, 0.98, -2.0), # 47-49: loop end
+	Vector3(0.5, 1.01, 0.0), Vector3(1.0, 1.01, 2.0), Vector3(1.0, 1.03, 2.0), Vector3(1.0, 1.03, 2.0), # 50-53: outro
+	Vector3(1.0, 1.03, 2.0), Vector3(1.0, 1.03, 2.0), Vector3(0.0, 1.01, 1.0), Vector3(-0.5, 1.01, 1.0), # 54-57
+	Vector3(-0.5, 1.01, 0.0), Vector3(-0.5, 1.01, 0.0), Vector3(-0.5, 1.01, 0.0) # 58-60
+]
 
 # 外部组件引用
 var window_manager: WindowManager = null
 
 @onready var anim_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var ground_shadow: ColorRect = get_node_or_null("GroundShadow")
 
 func _ready() -> void:
 	anim_sprite.position = Vector2(160, base_pos_y)
@@ -58,13 +91,17 @@ func _process(delta: float) -> void:
 			_process_walk_outro(delta)
 		State.ACTION:
 			_process_action(delta)
+	
+	_update_shadow()
 
 # ==================== IDLE 状态 ====================
 
 func play_idle() -> void:
 	current_state = State.IDLE
 	current_speed = 0.0
+	current_breath_y = 0.0
 	action_name = "idle"
+	anim_sprite.position.y = base_pos_y
 	anim_sprite.play("idle")
 	
 	# 如果朝向依然是朝左，在进入待机正面时优雅翻回正向 (1)
@@ -76,11 +113,16 @@ func play_idle() -> void:
 func _process_idle(delta: float) -> void:
 	idle_time += delta
 	
-	# 可爱微呼吸律动 (在非翻转状态下)
+	# 自然微呼吸律动（保持脚底稳贴地面，身体舒展与影子呼吸严格同步）
 	if not is_flipping:
-		var breath = sin(idle_time * 2.8) * 0.015
+		var breath = sin(idle_time * 2.5) * 0.016
+		current_breath_y = breath
 		anim_sprite.scale.y = 1.0 + breath
 		anim_sprite.scale.x = float(facing_direction) * (1.0 - breath * 0.5)
+		# 脚底贴地锁定补偿（消除中心缩放导致的脚部悬空，仅头部胸部起伏）
+		anim_sprite.position.y = base_pos_y - (112.0 * breath)
+	else:
+		current_breath_y = 0.0
 	
 	# 自动随机漫步计时
 	if auto_walk_enabled and not is_flipping:
@@ -102,8 +144,8 @@ func paper_flip(target_dir: int, on_complete: Callable = Callable()) -> void:
 	var tween = create_tween().set_parallel(false)
 	
 	# 阶段 1：向中线收缩变窄为纸片侧面 (0.08s)，伴随微小跳起
-	tween.tween_property(anim_sprite, "scale:x", 0.0, 0.08)\
-		.set_trans(Tween.TRANS_QUAD)\
+	tween.tween_property(anim_sprite, "scale:x", 0.0, 0.08) \
+		.set_trans(Tween.TRANS_QUAD) \
 		.set_ease(Tween.EASE_IN)
 	tween.parallel().tween_property(anim_sprite, "scale:y", 1.08, 0.08)
 	tween.parallel().tween_property(anim_sprite, "position:y", base_pos_y - 4.0, 0.08)
@@ -115,15 +157,15 @@ func paper_flip(target_dir: int, on_complete: Callable = Callable()) -> void:
 	)
 	
 	# 阶段 2：向目标方向弹出展开 (0.10s)，Q弹 Overshoot
-	tween.tween_property(anim_sprite, "scale:x", float(target_dir) * 1.14, 0.10)\
-		.set_trans(Tween.TRANS_BACK)\
+	tween.tween_property(anim_sprite, "scale:x", float(target_dir) * 1.14, 0.10) \
+		.set_trans(Tween.TRANS_BACK) \
 		.set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(anim_sprite, "scale:y", 0.94, 0.10)
 	tween.parallel().tween_property(anim_sprite, "position:y", base_pos_y + 2.0, 0.10)
 	
 	# 阶段 3：平复回归稳定尺寸 (0.05s)
-	tween.tween_property(anim_sprite, "scale:x", float(target_dir) * 1.0, 0.05)\
-		.set_trans(Tween.TRANS_SINE)\
+	tween.tween_property(anim_sprite, "scale:x", float(target_dir) * 1.0, 0.05) \
+		.set_trans(Tween.TRANS_SINE) \
 		.set_ease(Tween.EASE_IN_OUT)
 	tween.parallel().tween_property(anim_sprite, "scale:y", 1.0, 0.05)
 	tween.parallel().tween_property(anim_sprite, "position:y", base_pos_y, 0.05)
@@ -168,6 +210,9 @@ func start_random_walk() -> void:
 func start_walk(direction: int) -> void:
 	var target_dir = -1 if direction < 0 else 1
 	is_stopping_walk = false
+	current_breath_y = 0.0
+	anim_sprite.position.y = base_pos_y
+	anim_sprite.scale = Vector2(float(target_dir), 1.0)
 	
 	if is_flipping:
 		pending_walk_dir = target_dir
@@ -297,9 +342,9 @@ func _trigger_action_bounce(act_name: String) -> void:
 	match act_name:
 		"celebrate":
 			for i in 2:
-				tween.tween_property(anim_sprite, "position:y", base_pos_y - 25.0, 0.15)\
+				tween.tween_property(anim_sprite, "position:y", base_pos_y - 25.0, 0.15) \
 					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-				tween.tween_property(anim_sprite, "position:y", base_pos_y, 0.15)\
+				tween.tween_property(anim_sprite, "position:y", base_pos_y, 0.15) \
 					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		"eat_burger", "drink_coke":
 			for i in 3:
@@ -322,13 +367,13 @@ func _process_action(delta: float) -> void:
 func play_click_bounce() -> void:
 	# 点击小宝时的快乐弹性反馈
 	var tween = create_tween().set_parallel(false)
-	tween.tween_property(anim_sprite, "scale", Vector2(float(facing_direction) * 1.15, 0.85), 0.09)\
+	tween.tween_property(anim_sprite, "scale", Vector2(float(facing_direction) * 1.15, 0.85), 0.09) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(anim_sprite, "scale", Vector2(float(facing_direction) * 0.92, 1.12), 0.12)\
+	tween.tween_property(anim_sprite, "scale", Vector2(float(facing_direction) * 0.92, 1.12), 0.12) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(anim_sprite, "position:y", base_pos_y - 14.0, 0.12)\
+	tween.tween_property(anim_sprite, "position:y", base_pos_y - 14.0, 0.12) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(anim_sprite, "position:y", base_pos_y, 0.12)\
+	tween.tween_property(anim_sprite, "position:y", base_pos_y, 0.12) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.tween_property(anim_sprite, "scale", Vector2(float(facing_direction) * 1.0, 1.0), 0.08)
 
@@ -340,3 +385,70 @@ func get_current_action_name() -> String:
 			return action_name
 		_:
 			return "idle"
+
+func _get_current_frame_index() -> int:
+	match anim_sprite.animation:
+		"idle":
+			return 0
+		"walk_intro":
+			return clampi(1 + anim_sprite.frame, 1, 25)
+		"walk_loop":
+			return clampi(26 + anim_sprite.frame, 26, 48)
+		"walk_outro":
+			return clampi(49 + anim_sprite.frame, 49, 59)
+		_:
+			return 0
+
+# ==================== 地面动态阴影联动 ====================
+
+func _update_shadow() -> void:
+	if ground_shadow == null:
+		return
+	
+	# 设置阴影底座基础尺寸与中心缩放锚点
+	ground_shadow.size = Vector2(shadow_width, shadow_height)
+	ground_shadow.pivot_offset = Vector2(shadow_width * 0.5, shadow_height * 0.5)
+	
+	# 行走动作动态联动偏移与形变
+	var walk_dx: float = 0.0
+	var walk_dy: float = 0.0
+	var walk_sx: float = 1.0
+	var walk_sy: float = 1.0
+	
+	if shadow_walk_dynamic and (current_state == State.WALK_INTRO or current_state == State.WALK_LOOP or current_state == State.WALK_OUTRO):
+		var frame_idx = _get_current_frame_index()
+		if frame_idx >= 0 and frame_idx < FEET_METRICS.size():
+			var m = FEET_METRICS[frame_idx]
+			# m.x: 脚底水平前后摆动偏移（随行走朝向翻转）
+			walk_dx = m.x * float(facing_direction) * shadow_walk_intensity
+			# m.y: 跨步宽度缩放（双脚迈开跨步时变宽，单脚收起离地时变窄）
+			walk_sx = 1.0 + (m.y - 1.0) * shadow_walk_intensity * 1.5
+			# m.z: 脚掌着地高低差微调与触地压扁反馈
+			walk_dy = m.z * shadow_walk_intensity * 0.6
+			walk_sy = 1.0 + (m.z * 0.03) * shadow_walk_intensity
+	
+	# 中心对齐：X 跟随精灵中心 + 水平微调 + 动作摆动，Y 保持在地面中心 + 步态微调
+	ground_shadow.position.x = anim_sprite.position.x + shadow_offset_x + walk_dx - (shadow_width * 0.5)
+	ground_shadow.position.y = shadow_center_y + walk_dy - (shadow_height * 0.5)
+	
+	# 计算起跳/浮空高度（相对默认地面 base_pos_y，排除待机微呼吸的脚底贴地补偿）
+	var jump_height = 0.0
+	if current_state != State.IDLE:
+		jump_height = maxf(0.0, base_pos_y - anim_sprite.position.y)
+	var jump_ratio = clamp(jump_height / 35.0, 0.0, 1.0)
+	
+	# 腾空越高：影子缩小、变淡
+	var height_scale = lerp(1.0, 0.65, jump_ratio)
+	var alpha_factor = lerp(1.0, 0.35, jump_ratio)
+	
+	# 待机微呼吸对影子的同步影响（吸气挺拔时影子微聚微敛，呼气下沉时影子横向舒展）
+	var idle_shadow_sy = 1.0 - (current_breath_y * 0.6)
+	var idle_shadow_alpha = 1.0 - (current_breath_y * 0.3)
+	
+	# 宽度联动角色本体翻转收缩与行走跨步形变
+	var body_scale_x = abs(anim_sprite.scale.x)
+	ground_shadow.scale.x = body_scale_x * walk_sx * height_scale
+	ground_shadow.scale.y = idle_shadow_sy * walk_sy * height_scale
+	
+	# 动态透明度调整（基础不透明度 * 腾空淡化系数 * 待机微呼吸淡化）
+	ground_shadow.modulate.a = shadow_opacity * alpha_factor * idle_shadow_alpha

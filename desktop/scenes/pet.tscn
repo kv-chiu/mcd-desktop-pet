@@ -1,13 +1,27 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/pet.gd" id="1_pet"]
-[ext_resource type="SpriteFrames" path="res://assets/sprites/shubao-walk-sprite/shubao_frames.tres" id="2_frames"]
+[ext_resource type="Shader" path="res://assets/shaders/ground_shadow.gdshader" id="2_shader"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/shubao-walk-sprite/shubao_frames.tres" id="3_frames"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_shadow"]
+shader = ExtResource("2_shader")
+shader_parameter/shadow_color = Color(0.02, 0.02, 0.05, 1.0)
 
 [node name="Pet" type="Node2D"]
 script = ExtResource("1_pet")
 
+[node name="GroundShadow" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_shadow")
+offset_left = 95.0
+offset_top = 280.0
+offset_right = 225.0
+offset_bottom = 304.0
+pivot_offset = Vector2(65, 12)
+mouse_filter = 2
+
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(160, 180)
-sprite_frames = ExtResource("2_frames")
+sprite_frames = ExtResource("3_frames")
 animation = &"idle"
 autoplay = "idle"
