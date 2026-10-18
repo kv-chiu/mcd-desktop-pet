@@ -1,0 +1,261 @@
+{
+  "image": "gemini_generated_video_3db164a7_sprites.png",
+  "imageSize": {
+    "width": 1024,
+    "height": 2048
+  },
+  "fps": 30,
+  "playback": "loop",
+  "settings": {
+    "mode": "size",
+    "width": 256,
+    "height": 256,
+    "columns": 4,
+    "rows": 8,
+    "gap": 0,
+    "offsetX": 0,
+    "offsetY": 0
+  },
+  "frames": [
+    {
+      "x": 0,
+      "y": 0,
+      "width": 256,
+      "height": 256,
+      "index": 0,
+      "duration": 33
+    },
+    {
+      "x": 256,
+      "y": 0,
+      "width": 256,
+      "height": 256,
+      "index": 1,
+      "duration": 33
+    },
+    {
+      "x": 512,
+      "y": 0,
+      "width": 256,
+      "height": 256,
+      "index": 2,
+      "duration": 33
+    },
+    {
+      "x": 768,
+      "y": 0,
+      "width": 256,
+      "height": 256,
+      "index": 3,
+      "duration": 33
+    },
+    {
+      "x": 0,
+      "y": 256,
+      "width": 256,
+      "height": 256,
+      "index": 4,
+      "duration": 33
+    },
+    {
+      "x": 256,
+      "y": 256,
+      "width": 256,
+      "height": 256,
+      "index": 5,
+      "duration": 33
+    },
+    {
+      "x": 512,
+      "y": 256,
+      "width": 256,
+      "height": 256,
+      "index": 6,
+      "duration": 33
+    },
+    {
+      "x": 768,
+      "y": 256,
+      "width": 256,
+      "height": 256,
+      "index": 7,
+      "duration": 33
+    },
+    {
+      "x": 0,
+      "y": 512,
+      "width": 256,
+      "height": 256,
+      "index": 8,
+      "duration": 33
+    },
+    {
+      "x": 256,
+      "y": 512,
+      "width": 256,
+      "height": 256,
+      "index": 9,
+      "duration": 33
+    },
+    {
+      "x": 512,
+      "y": 512,
+      "width": 256,
+      "height": 256,
+      "index": 10,
+      "duration": 33
+    },
+    {
+      "x": 768,
+      "y": 512,
+      "width": 256,
+      "height": 256,
+      "index": 11,
+      "duration": 33
+    },
+    {
+      "x": 0,
+      "y": 768,
+      "width": 256,
+      "height": 256,
+      "index": 12,
+      "duration": 33
+    },
+    {
+      "x": 256,
+      "y": 768,
+      "width": 256,
+      "height": 256,
+      "index": 13,
+      "duration": 33
+    },
+    {
+      "x": 512,
+      "y": 768,
+      "width": 256,
+      "height": 256,
+      "index": 14,
+      "duration": 33
+    },
+    {
+      "x": 768,
+      "y": 768,
+      "width": 256,
+      "height": 256,
+      "index": 15,
+      "duration": 33
+    },
+    {
+      "x": 0,
+      "y": 1024,
+      "width": 256,
+      "height": 256,
+      "index": 16,
+      "duration": 33
+    },
+    {
+      "x": 256,
+      "y": 1024,
+      "width": 256,
+      "height": 256,
+      "index": 17,
+      "duration": 33
+    },
+    {
+      "x": 512,
+      "y": 1024,
+      "width": 256,
+      "height": 256,
+      "index": 18,
+      "duration": 33
+    },
+    {
+      "x": 768,
+      "y": 1024,
+      "width": 256,
+      "height": 256,
+      "index": 19,
+      "duration": 33
+    },
+    {
+      "x": 0,
+      "y": 1280,
+      "width": 256,
+      "height": 256,
+      "index": 20,
+      "duration": 33
+    },
+    {
+      "x": 256,
+      "y": 1280,
+      "width": 256,
+      "height": 256,
+      "index": 21,
+      "duration": 33
+    },
+    {
+      "x": 512,
+      "y": 1280,
+      "width": 256,
+      "height": 256,
+      "index": 22,
+      "duration": 33
+    },
+    {
+      "x": 768,
+      "y": 1280,
+      "width": 256,
+      "height": 256,
+      "index": 23,
+      "duration": 33
+    },
+    {
+      "x": 0,
+      "y": 1536,
+      "width": 256,
+      "height": 256,
+      "index": 24,
+      "duration": 33
+    },
+    {
+      "x": 256,
+      "y": 1536,
+      "width": 256,
+      "height": 256,
+      "index": 25,
+      "duration": 33
+    },
+    {
+      "x": 512,
+      "y": 1536,
+      "width": 256,
+      "height": 256,
+      "index": 26,
+      "duration": 33
+    },
+    {
+      "x": 768,
+      "y": 1536,
+      "width": 256,
+      "height": 256,
+      "index": 27,
+      "duration": 33
+    },
+    {
+      "x": 0,
+      "y": 1792,
+      "width": 256,
+      "height": 256,
+      "index": 28,
+      "duration": 33
+    },
+    {
+      "x": 256,
+      "y": 1792,
+      "width": 256,
+      "height": 256,
+      "index": 29,
+      "duration": 33
+    }
+  ]
+}
