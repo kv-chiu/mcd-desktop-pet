@@ -1,6 +1,6 @@
 ---
 name: mcd-desktop-pet
-description: 麦当劳桌面宠物与 33 项官方 MCP 工具调用技能。使用标准 CLI (mcd) 命令替代繁琐底层的 HTTP/JSON 原生命令，支持通过自然语言一键操控桌宠动画、气泡对话、好感度互动，以及调用麦当劳官方工具（领券、营养查询、积分、活动日历等）。
+description: 麦当劳桌面宠物与 33 项官方 MCP 工具调用技能。使用标准 CLI (mcd) 命令替代繁琐底层的 HTTP/JSON 原生命令，支持通过自然语言一键操控桌宠动画、气泡对话、好感度互动，以及调用麦当劳官方工具（领券、营养查询、积分、活动日历等）。安装时自动将 CLI 加入系统 PATH，并提供完整干净卸载说明。
 ---
 
 # 麦当劳桌面宠物与 MCP 工具集 Agent 技能规范
@@ -9,7 +9,26 @@ description: 麦当劳桌面宠物与 33 项官方 MCP 工具调用技能。使�
 
 ---
 
-## 一、 核心原则：用标准化 CLI 替代复杂原生命令
+## 一、 技能安装与环境变量自动配置 (Installation)
+
+在引入或首次使用本技能时，运行安装脚本即可**自动完成环境自检，并将 `mcd` CLI 永久注入系统环境变量 PATH**：
+
+```bash
+# 推荐方式 1: Python 环境一键自检并自动配置 PATH
+python3 skill/scripts/install.py --token "<你的麦当劳Token>"
+
+# 推荐方式 2: macOS / Linux (原生 Shell 零依赖，自动写入 ~/.zshrc 或 ~/.bashrc)
+./skill/scripts/install.sh "<你的麦当劳Token>"
+
+# 推荐方式 3: Windows (PowerShell 零依赖，自动写入 Windows User PATH)
+powershell -File .\skill\scripts\install.ps1 -Token "<你的麦当劳Token>"
+```
+
+安装完成后，任意终端直接键入 `mcd --help` 即可全局生效！
+
+---
+
+## 二、 核心原则：用标准化 CLI 替代复杂原生命令
 
 * **无需拼装底层 HTTP 请求**：不需要构造繁琐的 JSON Header、转义字符或记忆长 URL 路径。
 * **Agent 友好输出**：所有指令均支持 `--json` 参数，输出结构化数据供 Agent 精准解析。
@@ -19,7 +38,7 @@ description: 麦当劳桌面宠物与 33 项官方 MCP 工具调用技能。使�
 
 ---
 
-## 二、 常用控制指令速查 (CLI 一键直达)
+## 三、 常用控制指令速查 (CLI 一键直达)
 
 ### 1. 桌面宠物表现与互动 (Pet Control)
 
@@ -57,20 +76,52 @@ description: 麦当劳桌面宠物与 33 项官方 MCP 工具调用技能。使�
 
 ---
 
-## 三、 免环境兜底方案 (Fallback)
+## 四、 干净卸载指南 (Clean Uninstall Guide)
 
-在极端轻量容器或尚未配置 CLI 的终端中，Agent 也可使用系统原生工具作为备选兜底：
+如果用户需要卸载本技能或清理本地环境，提供了自动化脚本与完全透明的手动清理方法：
 
-1. **直接 curl 调用**：
-   * 触发动作：`curl -s -X POST http://127.0.0.1:3001/api/pet/action -H "Content-Type: application/json" -d '{"action":"wave","speech":"你好"}'`
-   * 查询营养：`curl -s "http://127.0.0.1:3001/api/tools/quick/nutrition?keyword=巨无霸"`
-2. **免依赖轻量脚本**：
-   * macOS / Linux：`./skill/scripts/control.sh pet wave "你好"`
-   * Windows：`powershell -File .\skill\scripts\control.ps1 pet wave "你好"`
+### 1. 一键自动化干净卸载
+
+卸载脚本将**自动终止后台进程、从系统环境变量 PATH 中擦除相关配置、删除软链接并清理入口文件**：
+
+```bash
+# 方式 1: Python 环境卸载 (追加 --purge 可同时清除历史配置与 Token)
+python3 skill/scripts/uninstall.py [--purge]
+
+# 方式 2: macOS / Linux 原生 Shell 一键卸载
+./skill/scripts/uninstall.sh [--purge]
+
+# 方式 3: Windows PowerShell 一键卸载
+powershell -File .\skill\scripts\uninstall.ps1 [-Purge]
+```
+
+### 2. 手动彻底清理说明 (透明公开)
+
+若用户希望手动逐项确认并清理，只需执行以下 4 步：
+
+1. **停止运行中的服务与桌宠**：
+   ```bash
+   mcd stop
+   pkill -f "McdDesktopPet" 2>/dev/null || true
+   ```
+2. **清理 Shell 配置文件中的 PATH 注入**：
+   检查并删除 `~/.zshrc` 或 `~/.bashrc` 中的如下标记块：
+   ```bash
+   # >>> mcd-desktop-pet cli >>>
+   export PATH="$HOME/.mcd-desktop-pet/bin:$PATH"
+   # <<< mcd-desktop-pet cli <<<
+   ```
+3. **移除本地数据与缓存目录**：
+   ```bash
+   rm -rf ~/.mcd-desktop-pet
+   rm -f ~/.local/bin/mcd
+   ```
+4. **移除 Skill 扩展包**：
+   从您的 Agent 技能库目录中删除 `skill/` 或对应的 `mcd-desktop-pet/` 文件夹即可。
 
 ---
 
-## 四、 Agent 响应交互准则
+## 五、 Agent 响应交互准则
 
 1. **组合联动响应**：当执行点餐、查券等麦当劳业务时，除了向用户汇报数据，建议**联动调用一条桌宠动作**（如查到优惠券时让桌宠 `jump` 或 `wave` 并说出恭喜语），带给用户生动的桌宠陪伴体验。
 2. **结构化优先**：命令均带上 `--json` 参数，以便根据返回值中的 `success`、`message`、`data` 精准判断执行状态。
