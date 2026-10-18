@@ -46,12 +46,12 @@ toolRoutes.post('/:name', async (c) => {
 
     // 特殊动作联动反馈：如自动领券成功触发桌宠庆祝
     if (toolName === 'auto-bind-coupons' || toolName === 'exchange-point-coupon') {
-      wsHub.emitPetAction('celebrate', {
+      wsHub.emitPetAction('jump', {
         duration: 3.5,
         speech: '主人！麦当劳优惠券已全部为您自动领取好啦！🎉',
       });
     } else if (toolName === 'create-order') {
-      wsHub.emitPetAction('eat_burger', {
+      wsHub.emitPetAction('wave', {
         duration: 4.0,
         speech: '订单已创建！麦麦美味正在加速准备中~🍔',
       });
@@ -87,7 +87,7 @@ toolRoutes.get('/quick/coupons', async (c) => {
 toolRoutes.post('/quick/auto-bind', async (c) => {
   try {
     const result = await mcpGateway.executeTool('auto-bind-coupons');
-    wsHub.emitPetAction('celebrate', {
+    wsHub.emitPetAction('jump', {
       duration: 3.5,
       speech: '太棒啦！麦当劳优惠券已一键领入卡包~🎫',
     });

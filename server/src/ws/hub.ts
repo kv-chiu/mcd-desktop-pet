@@ -170,7 +170,7 @@ export class WebSocketHub {
           // 用户点击了桌宠
           const { state, message } = storage.interactPet();
           this.emitStateUpdate(state);
-          this.emitPetAction('celebrate', {
+          this.emitPetAction('jump', {
             duration: 2.5,
             speech: message,
           });

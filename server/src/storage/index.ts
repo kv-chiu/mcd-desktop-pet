@@ -11,13 +11,9 @@ export interface AppConfig {
   autoStart: boolean;
 }
 
-export type PetMood = 'happy' | 'normal' | 'sleepy' | 'celebrating';
+export type PetMood = 'happy' | 'normal';
 export type PetActionType =
   | 'idle'
-  | 'eat_burger'
-  | 'drink_coke'
-  | 'celebrate'
-  | 'sleep'
   | 'wave'
   | 'jump'
   | 'speak';
@@ -128,13 +124,7 @@ export class StorageService {
 
   private applyDecay(state: PetState): PetState {
     let calculatedMood: PetMood = state.mood;
-    if (calculatedMood === 'celebrating') {
-      return state;
-    }
-
-    if (state.favor < 30) {
-      calculatedMood = 'sleepy';
-    } else if (state.favor >= 60) {
+    if (state.favor >= 60) {
       calculatedMood = 'happy';
     } else {
       calculatedMood = 'normal';
@@ -180,7 +170,7 @@ export class StorageService {
       favor: Math.min(100, current.favor + 5),
       experience: current.experience + 5,
       mood: 'happy',
-      currentAction: 'celebrate',
+      currentAction: 'jump',
       lastInteractedTime: new Date().toISOString(),
     });
 

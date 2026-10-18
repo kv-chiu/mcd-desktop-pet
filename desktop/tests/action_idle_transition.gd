@@ -58,7 +58,7 @@ func _run() -> void:
 			pet._on_animation_finished()
 			_check(pet.anim_sprite.animation == &"jump_return", "Did not enter return for interruption check")
 		if interruption.ends_with("action"):
-			pet.play_action_by_name("celebrate", 2.0)
+			pet.play_action_by_name("wave", 2.0)
 		elif interruption.ends_with("drag"):
 			pet.interrupt_walk()
 		else:
@@ -67,7 +67,7 @@ func _run() -> void:
 		_check(completions.count("jump") == 1, interruption + " received stale jump completion")
 		_check(pet.anim_sprite.material == original_material, interruption + " changed the sprite material")
 		if interruption.ends_with("action"):
-			_check(pet.action_name == "celebrate" and pet.current_state == DesktopPet.State.ACTION, "Old action replaced new action")
+			_check(pet.action_name == "wave" and pet.current_state == DesktopPet.State.ACTION, "Old action replaced new action")
 		elif interruption.ends_with("walk"):
 			_check(pet.current_state == DesktopPet.State.WALK_INTRO, "Old action replaced walking")
 		else:

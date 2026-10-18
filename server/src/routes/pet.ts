@@ -20,10 +20,6 @@ petRoutes.post('/action', async (c) => {
 
   const validActions: PetActionType[] = [
     'idle',
-    'eat_burger',
-    'drink_coke',
-    'celebrate',
-    'sleep',
     'wave',
     'jump',
     'speak',
@@ -72,7 +68,7 @@ petRoutes.post('/speak', async (c) => {
 petRoutes.post('/interact', (c) => {
   const { state, message } = storage.interactPet();
   wsHub.emitStateUpdate(state);
-  wsHub.emitPetAction('celebrate', {
+  wsHub.emitPetAction('jump', {
     duration: 2.5,
     speech: message,
   });

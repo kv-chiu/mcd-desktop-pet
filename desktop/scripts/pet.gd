@@ -417,26 +417,11 @@ func _trigger_jump_bounce(target_base_y: float = base_pos_y) -> void:
 	tween.tween_property(anim_sprite, "position:y", target_base_y, 0.16) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
-func _trigger_action_bounce(act_name: String) -> void:
+func _trigger_action_bounce(_act_name: String) -> void:
 	action_tween = create_tween().set_parallel(false)
 	var tween := action_tween
-	match act_name:
-		"celebrate":
-			for i in 2:
-				tween.tween_property(anim_sprite, "position:y", base_pos_y - 25.0, 0.15) \
-					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-				tween.tween_property(anim_sprite, "position:y", base_pos_y, 0.15) \
-					.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-		"eat_burger", "drink_coke":
-			for i in 3:
-				tween.tween_property(anim_sprite, "scale:y", 0.9, 0.12)
-				tween.tween_property(anim_sprite, "scale:y", 1.05, 0.12)
-			tween.tween_property(anim_sprite, "scale:y", 1.0, 0.1)
-		"sleep":
-			tween.tween_property(anim_sprite, "scale:y", 0.88, 0.3)
-		_:
-			tween.tween_property(anim_sprite, "position:y", base_pos_y - 12.0, 0.12)
-			tween.tween_property(anim_sprite, "position:y", base_pos_y, 0.12)
+	tween.tween_property(anim_sprite, "position:y", base_pos_y - 12.0, 0.12)
+	tween.tween_property(anim_sprite, "position:y", base_pos_y, 0.12)
 
 func _process_action(delta: float) -> void:
 	# 动作与补帧都以播放完成为准，避免计时器截断收尾。
