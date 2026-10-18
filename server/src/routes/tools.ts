@@ -56,6 +56,7 @@ toolRoutes.post('/:name', async (c) => {
   const toolName = c.req.param('name');
   const authHeader = c.req.header('Authorization');
   const overrideToken = authHeader ? authHeader.replace(/^Bearer\s+/i, '') : undefined;
+  const mockScenario = c.req.header('x-mock-scenario') || c.req.query('mock');
 
   let body = {};
   try {
@@ -65,31 +66,86 @@ toolRoutes.post('/:name', async (c) => {
   }
 
   try {
-    const result = await mcpGateway.executeTool(toolName, body, overrideToken);
+    const result = await mcpGateway.executeTool(toolName, body, overrideToken, { mockScenario });
 
-    // 特殊动作联动反馈：如自动领券成功触发桌宠庆祝
-    if (toolName === 'auto-bind-coupons' || toolName === 'exchange-point-coupon') {
-      wsHub.emitPetAction('jump', {
-        duration: 3.5,
-        speech: '主人！麦当劳优惠券已全部为您自动领取好啦！🎉',
-      });
-    } else if (toolName === 'create-order') {
-      wsHub.emitPetAction('wave', {
-        duration: 4.0,
-        speech: '订单已创建！麦麦美味正在加速准备中~🍔',
+    // 关键规范：成功反馈只能由实际业务结果驱动
+    if (result.petFeedback?.shouldFeedback) {
+      wsHub.emitPetAction(result.petFeedback.action, {
+        duration: result.petFeedback.duration,
+        speech: result.petFeedback.speech,
       });
     }
 
+    // 区分四个层级状态：
+    // 1. 传输成功: HTTP 200 已满足
+    // 2. JSON-RPC 成功: 协议层已正常通信
+    // 3. 工具执行成功: result.isError 为 false 且 tool.success 为 true
+    // 4. 业务部分成功/完全成功: outcome 不为 failure
+    const isToolSuccess = !result.isError && (result.layers ? result.layers.tool.success : true);
+    const isBusinessSuccess = result.layers ? result.layers.business.outcome !== 'failure' : true;
+    const isPartialSuccess = result.layers?.business.outcome === 'partial_success';
+    const overallSuccess = Boolean(isToolSuccess && isBusinessSuccess);
+
     return c.json({
-      success: true,
+      success: overallSuccess,
+      partial: isPartialSuccess,
+      layers: result.layers,
       data: result,
+      error: !overallSuccess
+        ? (result.layers?.business.summary || result.layers?.tool.error || result.error || '执行未成功')
+        : undefined,
     });
   } catch (err: any) {
     return c.json(
       {
         success: false,
         error: err.message || '执行 MCP 工具失败',
+        layers: err.layers,
         details: err,
+      },
+      err.layers?.transport?.status && err.layers.transport.status >= 400 ? err.layers.transport.status : 500
+    );
+  }
+});
+
+// 模拟接口：供测试与验证各层级状态（传输、JSON-RPC、工具执行、业务结果）
+toolRoutes.post('/simulate', async (c) => {
+  const body = await c.req.json().catch(() => ({}));
+  const scenario = body.scenario || c.req.header('x-mock-scenario') || c.req.query('mock') || 'coupon-tool-error';
+  const toolName = body.toolName || 'auto-bind-coupons';
+
+  try {
+    const result = await mcpGateway.executeTool(toolName, body.args || {}, undefined, { mockScenario: scenario });
+
+    if (result.petFeedback?.shouldFeedback) {
+      wsHub.emitPetAction(result.petFeedback.action, {
+        duration: result.petFeedback.duration,
+        speech: result.petFeedback.speech,
+      });
+    }
+
+    const isToolSuccess = !result.isError && (result.layers ? result.layers.tool.success : true);
+    const isBusinessSuccess = result.layers ? result.layers.business.outcome !== 'failure' : true;
+    const isPartialSuccess = result.layers?.business.outcome === 'partial_success';
+    const overallSuccess = Boolean(isToolSuccess && isBusinessSuccess);
+
+    return c.json({
+      success: overallSuccess,
+      partial: isPartialSuccess,
+      scenario,
+      layers: result.layers,
+      data: result,
+      error: !overallSuccess
+        ? (result.layers?.business.summary || result.layers?.tool.error || result.error || '执行未成功')
+        : undefined,
+    });
+  } catch (err: any) {
+    return c.json(
+      {
+        success: false,
+        scenario,
+        error: err.message || '模拟执行失败',
+        layers: err.layers,
       },
       500
     );
@@ -98,46 +154,80 @@ toolRoutes.post('/:name', async (c) => {
 
 // 快捷接口：查询可用优惠券
 toolRoutes.get('/quick/coupons', async (c) => {
+  const mockScenario = c.req.header('x-mock-scenario') || c.req.query('mock');
   try {
-    const result = await mcpGateway.executeTool('available-coupons');
-    return c.json({ success: true, data: result });
+    const result = await mcpGateway.executeTool('available-coupons', {}, undefined, { mockScenario });
+    const isToolSuccess = !result.isError && (result.layers ? result.layers.tool.success : true);
+    const isBusinessSuccess = result.layers ? result.layers.business.outcome !== 'failure' : true;
+    return c.json({
+      success: Boolean(isToolSuccess && isBusinessSuccess),
+      layers: result.layers,
+      data: result,
+      error: result.error,
+    });
   } catch (err: any) {
-    return c.json({ success: false, error: err.message || '查询优惠券失败' }, 500);
+    return c.json({ success: false, error: err.message || '查询优惠券失败', layers: err.layers }, 500);
   }
 });
 
-// 快捷接口：一键自动领券并通知桌宠
+// 快捷接口：一键自动领券并通知桌宠（成功反馈只能由实际业务结果驱动）
 toolRoutes.post('/quick/auto-bind', async (c) => {
+  const mockScenario = c.req.header('x-mock-scenario') || c.req.query('mock');
   try {
-    const result = await mcpGateway.executeTool('auto-bind-coupons');
-    wsHub.emitPetAction('jump', {
-      duration: 3.5,
-      speech: '太棒啦！麦当劳优惠券已一键领入卡包~🎫',
+    const result = await mcpGateway.executeTool('auto-bind-coupons', {}, undefined, { mockScenario });
+
+    // 只有实际业务结果驱动桌宠反馈
+    if (result.petFeedback?.shouldFeedback) {
+      wsHub.emitPetAction(result.petFeedback.action, {
+        duration: result.petFeedback.duration,
+        speech: result.petFeedback.speech,
+      });
+    }
+
+    const isToolSuccess = !result.isError && (result.layers ? result.layers.tool.success : true);
+    const isBusinessSuccess = result.layers ? result.layers.business.outcome !== 'failure' : true;
+    const isPartialSuccess = result.layers?.business.outcome === 'partial_success';
+    const overallSuccess = Boolean(isToolSuccess && isBusinessSuccess);
+
+    return c.json({
+      success: overallSuccess,
+      partial: isPartialSuccess,
+      layers: result.layers,
+      data: result,
+      error: !overallSuccess
+        ? (result.layers?.business.summary || result.layers?.tool.error || result.error || '领券未成功')
+        : undefined,
     });
-    return c.json({ success: true, data: result });
   } catch (err: any) {
-    return c.json({ success: false, error: err.message || '领券失败' }, 500);
+    return c.json({ success: false, error: err.message || '领券失败', layers: err.layers }, 500);
   }
 });
 
 // 快捷接口：活动日历
 toolRoutes.get('/quick/calendar', async (c) => {
   const month = c.req.query('month');
+  const mockScenario = c.req.header('x-mock-scenario') || c.req.query('mock');
   try {
-    const result = await mcpGateway.executeTool('campaign-calendar', month ? { month } : {});
-    return c.json({ success: true, data: result });
+    const result = await mcpGateway.executeTool('campaign-calendar', month ? { month } : {}, undefined, {
+      mockScenario,
+    });
+    return c.json({ success: true, layers: result.layers, data: result });
   } catch (err: any) {
-    return c.json({ success: false, error: err.message || '查询日历失败' }, 500);
+    return c.json({ success: false, error: err.message || '查询日历失败', layers: err.layers }, 500);
   }
 });
 
 // 快捷接口：营养成分查询
 toolRoutes.get('/quick/nutrition', async (c) => {
   const keyword = c.req.query('keyword');
+  const mockScenario = c.req.header('x-mock-scenario') || c.req.query('mock');
   try {
-    const result = await mcpGateway.executeTool('list-nutrition-foods', keyword ? { keyword } : {});
-    return c.json({ success: true, data: result });
+    const result = await mcpGateway.executeTool('list-nutrition-foods', keyword ? { keyword } : {}, undefined, {
+      mockScenario,
+    });
+    return c.json({ success: true, layers: result.layers, data: result });
   } catch (err: any) {
-    return c.json({ success: false, error: err.message || '查询营养信息失败' }, 500);
+    return c.json({ success: false, error: err.message || '查询营养信息失败', layers: err.layers }, 500);
   }
 });
+

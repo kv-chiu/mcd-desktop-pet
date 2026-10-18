@@ -12,6 +12,7 @@
     "dev:server": "pnpm -C server dev",
     "build:server": "pnpm -C server build",
     "start:server": "pnpm -C server start",
+    "test": "pnpm -C server test",
     "dev:desktop": "godot --path desktop/"
   }
 }

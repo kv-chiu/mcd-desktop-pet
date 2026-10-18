@@ -1,7 +1,7 @@
 import { WSContext } from 'hono/ws';
 import { storage } from '../storage/index.js';
-import { WsClientType, WsMessage, PetState, PetActionType } from '@mcd/shared';
-export { WsClientType, WsMessage };
+import type { WsClientType, WsMessage, PetState, PetActionType } from '@mcd/shared';
+export type { WsClientType, WsMessage };
 
 export interface ConnectedClient {
   id: string;

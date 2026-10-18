@@ -85,16 +85,19 @@ export const App: React.FC = () => {
       }, 100);
     } catch (err: any) {
       setExecuteError(err.message || '工具调用异常');
-      if (err.result) {
-        setLastResult({
-          toolName,
-          args,
-          result: err.result,
-          durationMs: err.durationMs || 0,
-          timestamp: err.timestamp || new Date().toLocaleTimeString(),
-          error: err.message,
-        });
-      }
+      setLastResult({
+        toolName,
+        args,
+        result: err.result || { error: err.message },
+        durationMs: err.durationMs || 0,
+        timestamp: err.timestamp || new Date().toLocaleTimeString(),
+        error: err.message,
+        isError: err.isError ?? true,
+        layers: err.layers,
+      });
+      setTimeout(() => {
+        visualizerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
     } finally {
       setIsExecuting(false);
     }
@@ -159,6 +162,8 @@ export const App: React.FC = () => {
                 result={lastResult.result}
                 durationMs={lastResult.durationMs}
                 timestamp={lastResult.timestamp}
+                error={lastResult.error}
+                layers={lastResult.layers}
               />
             </div>
           )}

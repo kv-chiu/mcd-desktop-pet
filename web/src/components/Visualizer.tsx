@@ -12,12 +12,15 @@ import {
   parseLotteryInfo,
   parseOrderList,
 } from '../utils/parsers';
+import { ExecutionLayers } from '../types/mcp';
 
 interface VisualizerProps {
   toolName: string;
   result: any;
   durationMs?: number;
   timestamp?: string;
+  error?: string;
+  layers?: ExecutionLayers;
 }
 
 export const Visualizer: React.FC<VisualizerProps> = ({
@@ -25,6 +28,8 @@ export const Visualizer: React.FC<VisualizerProps> = ({
   result,
   durationMs,
   timestamp,
+  error,
+  layers,
 }) => {
   const [viewMode, setViewMode] = useState<'visual' | 'raw'>('visual');
   const [copied, setCopied] = useState(false);
@@ -257,12 +262,44 @@ export const Visualizer: React.FC<VisualizerProps> = ({
 
     // 4. Auto Bind Coupons Result
     if (toolName === 'auto-bind-coupons') {
+      const isFailed = Boolean(
+        result?.isError ||
+        layers?.tool?.isError ||
+        layers?.business?.outcome === 'failure' ||
+        rawText.includes('优惠券领取失败') ||
+        rawText.includes('领取失败')
+      );
       const bindData = parseBindResult(rawText);
+
+      if (isFailed && bindData.coupons.length === 0) {
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span className="apple-badge apple-badge-error">
+                <Icon name="x-circle" size={12} />
+                领券失败: {layers?.business?.summary || layers?.tool?.error || error || rawText.trim() || '优惠券领取失败'}
+              </span>
+            </div>
+            <div className="apple-code-block" style={{ color: 'var(--red-9)' }}>
+              {rawText || error || '工具执行返回 result.isError: true'}
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span className={`apple-badge ${bindData.isAllSuccess ? 'apple-badge-success' : 'apple-badge-gold'}`}>
-              <Icon name="check" size={12} />
+            <span
+              className={`apple-badge ${
+                bindData.isAllSuccess
+                  ? 'apple-badge-success'
+                  : parseInt(bindData.success, 10) > 0
+                  ? 'apple-badge-gold'
+                  : 'apple-badge-error'
+              }`}
+            >
+              <Icon name={bindData.isAllSuccess ? 'check' : 'ticket'} size={12} />
               成功领取: {bindData.success} 张
             </span>
             {parseInt(bindData.fail, 10) > 0 && (
@@ -626,6 +663,56 @@ export const Visualizer: React.FC<VisualizerProps> = ({
           </button>
         </div>
       </div>
+
+      {/* 4-Layer Execution Status Bar */}
+      {layers && (
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '16px',
+            padding: '10px 14px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border-subtle)',
+          }}
+        >
+          <span className="font-s" style={{ color: 'var(--text-tertiary)', fontWeight: 500 }}>
+            状态分层判定:
+          </span>
+          <span className={`apple-badge ${layers.transport.success ? 'apple-badge-success' : 'apple-badge-error'}`}>
+            传输: HTTP {layers.transport.status} {layers.transport.success ? '成功' : '失败'}
+          </span>
+          <span className={`apple-badge ${layers.rpc.success ? 'apple-badge-success' : 'apple-badge-error'}`}>
+            JSON-RPC: {layers.rpc.success ? '协议正常' : '协议错误'}
+          </span>
+          <span className={`apple-badge ${layers.tool.success ? 'apple-badge-success' : 'apple-badge-error'}`}>
+            工具执行: {layers.tool.success ? '正常' : '失败 (isError: true)'}
+          </span>
+          <span
+            className={`apple-badge ${
+              layers.business.outcome === 'full_success'
+                ? 'apple-badge-success'
+                : layers.business.outcome === 'partial_success'
+                ? 'apple-badge-gold'
+                : layers.business.outcome === 'failure'
+                ? 'apple-badge-error'
+                : 'apple-badge'
+            }`}
+          >
+            业务结果:{' '}
+            {layers.business.outcome === 'full_success'
+              ? '完全成功'
+              : layers.business.outcome === 'partial_success'
+              ? '部分成功'
+              : layers.business.outcome === 'failure'
+              ? '业务失败'
+              : '常规完成'}
+          </span>
+        </div>
+      )}
 
       {/* Body */}
       {viewMode === 'visual' ? renderStructuredContent() : <div className="apple-code-block">{jsonString}</div>}

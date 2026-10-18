@@ -71,24 +71,28 @@ app.get('/', (c) => {
   });
 });
 
-// Start Server
-const config = storage.getConfig();
-const port = config.port || 3001;
+// Start Server (only when not running automated tests)
+const isTest = process.env.NODE_ENV === 'test' || process.argv.some((arg) => arg.includes('test'));
 
-const server = serve(
-  {
-    fetch: app.fetch,
-    port,
-  },
-  (info) => {
-    console.log(`\n======================================================`);
-    console.log(`🍔 麦当劳桌宠中枢服务 (MCD Pet Server) 已就绪!`);
-    console.log(`🌐 HTTP API 地址: http://localhost:${info.port}`);
-    console.log(`🔌 WebSocket 地址: ws://localhost:${info.port}/ws`);
-    console.log(`======================================================\n`);
-  }
-);
+if (!isTest) {
+  const config = storage.getConfig();
+  const port = config.port || 3001;
 
-injectWebSocket(server);
+  const server = serve(
+    {
+      fetch: app.fetch,
+      port,
+    },
+    (info) => {
+      console.log(`\n======================================================`);
+      console.log(`🍔 麦当劳桌宠中枢服务 (MCD Pet Server) 已就绪!`);
+      console.log(`🌐 HTTP API 地址: http://localhost:${info.port}`);
+      console.log(`🔌 WebSocket 地址: ws://localhost:${info.port}/ws`);
+      console.log(`======================================================\n`);
+    }
+  );
+
+  injectWebSocket(server);
+}
 
 export default app;

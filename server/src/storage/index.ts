@@ -11,8 +11,8 @@ export interface AppConfig {
   autoStart: boolean;
 }
 
-import { PetMood, PetActionType, PetState, ActionHistoryRecord } from '@mcd/shared';
-export { PetMood, PetActionType, PetState, ActionHistoryRecord };
+import type { PetMood, PetActionType, PetState, ActionHistoryRecord } from '@mcd/shared';
+export type { PetMood, PetActionType, PetState, ActionHistoryRecord };
 
 const DEFAULT_CONFIG: AppConfig = {
   token: process.env.MCD_MCP_TOKEN || '',

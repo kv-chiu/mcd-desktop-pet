@@ -106,7 +106,8 @@ class MCPClientService {
   async executeTool(
     token: string,
     toolName: string,
-    args: Record<string, any> = {}
+    args: Record<string, any> = {},
+    options?: { mockScenario?: string }
   ): Promise<ExecuteResult> {
     const actualToolName = this.normalizeToolName(toolName);
     const startTime = performance.now();
@@ -126,6 +127,9 @@ class MCPClientService {
       if (token && token.trim()) {
         headers['Authorization'] = `Bearer ${token.trim()}`;
       }
+      if (options?.mockScenario) {
+        headers['x-mock-scenario'] = options.mockScenario;
+      }
 
       const resp = await fetch(`${this.apiBase}/${actualToolName}`, {
         method: 'POST',
@@ -143,7 +147,9 @@ class MCPClientService {
         errObj.args = cleanArgs;
         errObj.durationMs = durationMs;
         errObj.timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
-        errObj.result = body.details || null;
+        errObj.result = body.data?.result || body.details || body.data || null;
+        errObj.layers = body.layers || null;
+        errObj.isError = body.layers?.tool?.isError ?? true;
         throw errObj;
       }
 
@@ -153,6 +159,7 @@ class MCPClientService {
         result: body.data,
         durationMs: Math.round(performance.now() - startTime),
         timestamp: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
+        layers: body.layers,
       };
 
       if (!this.sessionId) {
