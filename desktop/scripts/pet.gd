@@ -35,6 +35,11 @@ var action_timer: float = 0.0
 var action_duration: float = 3.0
 var current_breath_y: float = 0.0
 
+const ACTION_SCALE = Vector2(1.025, 1.07)
+const ACTION_Y_OFFSET: float = 7.5
+const IDLE_RETURN_FRAMES = preload("res://assets/sprites/shubao-idle-return/idle_returns.tres")
+var action_tween: Tween
+
 # 阴影尺寸与中心配置（可在属性面板或脚本直接调整）
 @export_group("地面阴影设置")
 @export var shadow_width: float = 129.0 # 椭圆宽度
@@ -73,6 +78,14 @@ var window_manager: WindowManager = null
 @onready var ground_shadow: ColorRect = get_node_or_null("GroundShadow")
 
 func _ready() -> void:
+	# 补帧离线生成；只扩展当前实例的动作序列，保持原行走资源不变。
+	anim_sprite.sprite_frames = anim_sprite.sprite_frames.duplicate()
+	for animation in IDLE_RETURN_FRAMES.get_animation_names():
+		anim_sprite.sprite_frames.add_animation(animation)
+		anim_sprite.sprite_frames.set_animation_loop(animation, false)
+		anim_sprite.sprite_frames.set_animation_speed(animation, IDLE_RETURN_FRAMES.get_animation_speed(animation))
+		for frame in range(IDLE_RETURN_FRAMES.get_frame_count(animation)):
+			anim_sprite.sprite_frames.add_frame(animation, IDLE_RETURN_FRAMES.get_frame_texture(animation, frame), IDLE_RETURN_FRAMES.get_frame_duration(animation, frame))
 	anim_sprite.position = Vector2(160, base_pos_y)
 	anim_sprite.animation_finished.connect(_on_animation_finished)
 	anim_sprite.animation_looped.connect(_on_animation_looped)
@@ -97,9 +110,11 @@ func _process(delta: float) -> void:
 # ==================== IDLE 状态 ====================
 
 func play_idle() -> void:
+	_stop_action_tween()
 	current_state = State.IDLE
 	current_speed = 0.0
 	current_breath_y = 0.0
+	idle_time = 0.0
 	action_name = "idle"
 	anim_sprite.position.y = base_pos_y
 	anim_sprite.play("idle")
@@ -208,6 +223,7 @@ func start_random_walk() -> void:
 	start_walk(chosen_dir)
 
 func start_walk(direction: int) -> void:
+	_stop_action_tween()
 	var target_dir = -1 if direction < 0 else 1
 	is_stopping_walk = false
 	current_breath_y = 0.0
@@ -318,11 +334,49 @@ func _on_animation_finished() -> void:
 				play_idle()
 				next_walk_delay = randf_range(3.5, 7.5)
 				action_finished.emit("walk")
+		"jump", "wave":
+			if current_state == State.ACTION:
+				_begin_idle_return()
+		"jump_return", "wave_return":
+			if current_state == State.ACTION:
+				var finished_name := action_name
+				play_idle()
+				next_walk_delay = randf_range(3.0, 6.0)
+				action_finished.emit(finished_name)
+
+func _begin_idle_return() -> void:
+	_stop_action_tween()
+	# 补帧已包含 ACTION_SCALE 和上移补偿；保留翻转等交互留下的额外变换。
+	var return_scale := anim_sprite.scale / ACTION_SCALE
+	var return_y := anim_sprite.position.y + return_scale.y * ACTION_Y_OFFSET
+	anim_sprite.scale = return_scale
+	anim_sprite.position.y = return_y
+	anim_sprite.play(action_name + "_return")
+	if not return_scale.is_equal_approx(Vector2.ONE) or not is_equal_approx(return_y, base_pos_y):
+		var frames := anim_sprite.sprite_frames
+		var duration := float(frames.get_frame_count(anim_sprite.animation)) / frames.get_animation_speed(anim_sprite.animation)
+		action_tween = create_tween().set_parallel(true)
+		action_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		action_tween.tween_property(anim_sprite, "scale", Vector2.ONE, duration)
+		action_tween.tween_property(anim_sprite, "position:y", base_pos_y, duration)
+
+func _stop_action_tween() -> void:
+	if action_tween != null:
+		action_tween.kill()
+		action_tween = null
 
 # ==================== 其它动作/互动 ====================
 
+func play_jump() -> void:
+	play_action_by_name("jump", 1.2)
+
+func play_wave() -> void:
+	play_action_by_name("wave", 1.8)
+
 func play_action_by_name(act_name: String, duration: float = 3.0) -> void:
+	_stop_action_tween()
 	is_stopping_walk = false
+	current_breath_y = 0.0
 	action_name = act_name
 	action_duration = duration
 	action_timer = 0.0
@@ -330,15 +384,42 @@ func play_action_by_name(act_name: String, duration: float = 3.0) -> void:
 	current_state = State.ACTION
 	
 	# 切回正视图作为动作底座
-	anim_sprite.play("idle")
 	if facing_direction != 1 and not is_flipping:
 		paper_flip(1)
 		
-	# 活泼的动作弹跳反馈
-	_trigger_action_bounce(act_name)
+	if anim_sprite.sprite_frames != null and anim_sprite.sprite_frames.has_animation(act_name):
+		anim_sprite.stop()
+		anim_sprite.play(act_name)
+		if act_name == "jump" or act_name == "wave":
+			# 近似对齐常态尺寸，减少动作与 walk001 之间的尺寸差异。
+			anim_sprite.scale = Vector2(float(facing_direction) * ACTION_SCALE.x, ACTION_SCALE.y)
+			anim_sprite.position.y = base_pos_y - ACTION_Y_OFFSET
+			if act_name == "jump":
+				_trigger_jump_bounce(base_pos_y - ACTION_Y_OFFSET)
+		else:
+			anim_sprite.scale = Vector2(float(facing_direction), 1.0)
+			anim_sprite.position.y = base_pos_y
+	else:
+		anim_sprite.scale = Vector2(float(facing_direction), 1.0)
+		anim_sprite.position.y = base_pos_y
+		anim_sprite.play("idle")
+		_trigger_action_bounce(act_name)
+
+func _trigger_jump_bounce(target_base_y: float = base_pos_y) -> void:
+	action_tween = create_tween().set_parallel(false)
+	var tween := action_tween
+	# 帧 1-12 为下蹲蓄力 (约 0.38s)
+	tween.tween_interval(0.38)
+	# 帧 13-19 为腾空起跳至最高点 (0.18s)
+	tween.tween_property(anim_sprite, "position:y", target_base_y - 20.0, 0.18) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	# 帧 20-25 触地回弹与缓冲 (0.16s)
+	tween.tween_property(anim_sprite, "position:y", target_base_y, 0.16) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 
 func _trigger_action_bounce(act_name: String) -> void:
-	var tween = create_tween().set_parallel(false)
+	action_tween = create_tween().set_parallel(false)
+	var tween := action_tween
 	match act_name:
 		"celebrate":
 			for i in 2:
@@ -358,6 +439,9 @@ func _trigger_action_bounce(act_name: String) -> void:
 			tween.tween_property(anim_sprite, "position:y", base_pos_y, 0.12)
 
 func _process_action(delta: float) -> void:
+	# 动作与补帧都以播放完成为准，避免计时器截断收尾。
+	if anim_sprite.animation in [&"jump", &"wave", &"jump_return", &"wave_return"]:
+		return
 	action_timer += delta
 	if action_timer >= action_duration:
 		var finished_name = action_name
@@ -431,10 +515,15 @@ func _update_shadow() -> void:
 	ground_shadow.position.x = anim_sprite.position.x + shadow_offset_x + walk_dx - (shadow_width * 0.5)
 	ground_shadow.position.y = shadow_center_y + walk_dy - (shadow_height * 0.5)
 	
-	# 计算起跳/浮空高度（相对默认地面 base_pos_y，排除待机微呼吸的脚底贴地补偿）
+	# 计算起跳/浮空高度（相对当前动作地面基准线，排除待机微呼吸的脚底贴地补偿）
+	var has_action_alignment := current_state == State.ACTION \
+		and anim_sprite.animation in [&"jump", &"wave"]
 	var jump_height = 0.0
 	if current_state != State.IDLE:
-		jump_height = maxf(0.0, base_pos_y - anim_sprite.position.y)
+		var ground_y = base_pos_y
+		if has_action_alignment:
+			ground_y = base_pos_y - ACTION_Y_OFFSET
+		jump_height = maxf(0.0, ground_y - anim_sprite.position.y)
 	var jump_ratio = clamp(jump_height / 35.0, 0.0, 1.0)
 	
 	# 腾空越高：影子缩小、变淡
@@ -445,8 +534,10 @@ func _update_shadow() -> void:
 	var idle_shadow_sy = 1.0 - (current_breath_y * 0.6)
 	var idle_shadow_alpha = 1.0 - (current_breath_y * 0.3)
 	
-	# 宽度联动角色本体翻转收缩与行走跨步形变
+	# 宽度联动角色本体翻转收缩与行走跨步形变（排除对齐补偿缩放的影响）
 	var body_scale_x = abs(anim_sprite.scale.x)
+	if has_action_alignment:
+		body_scale_x /= ACTION_SCALE.x
 	ground_shadow.scale.x = body_scale_x * walk_sx * height_scale
 	ground_shadow.scale.y = idle_shadow_sy * walk_sy * height_scale
 	

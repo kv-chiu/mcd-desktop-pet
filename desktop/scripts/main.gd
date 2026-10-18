@@ -58,6 +58,9 @@ func _setup_context_menu() -> void:
 	context_menu.add_item("转身翻转", 11)
 	context_menu.add_item("停下休息", 12)
 	context_menu.add_separator()
+	context_menu.add_item("跳跃", 14)
+	context_menu.add_item("挥手", 15)
+	context_menu.add_separator()
 	
 	# 全屏穿透开关选项
 	var fs_enabled = window_mgr.is_fullscreen_overlay_enabled()
@@ -81,6 +84,12 @@ func _on_menu_item_selected(id: int) -> void:
 		12:
 			pet.stop_walk()
 			speech_bubble.show_speech("原地立正休息一下~🍟", 2.0)
+		14:
+			pet.play_jump()
+			speech_bubble.show_speech("好耶！起飞跳跃~✨", 2.0)
+		15:
+			pet.play_wave()
+			speech_bubble.show_speech("嗨嗨！挥挥小手打招呼~🍟", 2.0)
 		13:
 			var new_state = not window_mgr.is_fullscreen_overlay_enabled()
 			window_mgr.set_show_over_fullscreen(new_state)

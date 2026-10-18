@@ -1,0 +1,26 @@
+{
+  "generator": "desktop/tools/generate_idle_transitions.py",
+  "method": "bidirectional DIS optical flow, inverse warping, premultiplied RGBA",
+  "steps": 8,
+  "fps": 45.0,
+  "duration_seconds": 0.2,
+  "action_scale": [
+    1.025,
+    1.07
+  ],
+  "action_offset_y": -7.5,
+  "sources": {
+    "idle": {
+      "path": "assets/sprites/shubao-walk-sprite/frames/shubao-walk-001.png",
+      "sha256": "cd03b4455f1744cb56262317d5bb2d479470445dbc563353730e40299f699e2f"
+    },
+    "jump": {
+      "path": "assets/sprites/shubao-jump-sprite/frames/shubao-jump-028.png",
+      "sha256": "c4a736357d8095f31f5ca84f9b297d89172cd1247785bb88866970c476ee0276"
+    },
+    "wave": {
+      "path": "assets/sprites/shubao-wave-sprite/frames/shubao-wave-048.png",
+      "sha256": "5b7b61fe0021fae4787a81234f695e83f7d933ff889f126ef85b868e0cf3385f"
+    }
+  }
+}

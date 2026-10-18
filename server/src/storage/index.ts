@@ -19,6 +19,7 @@ export type PetActionType =
   | 'celebrate'
   | 'sleep'
   | 'wave'
+  | 'jump'
   | 'speak';
 
 export interface PetState {

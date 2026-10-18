@@ -1,0 +1,52 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-001.png" id="idle"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/jump/return-001.png" id="jump_001"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/jump/return-002.png" id="jump_002"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/jump/return-003.png" id="jump_003"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/jump/return-004.png" id="jump_004"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/jump/return-005.png" id="jump_005"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/jump/return-006.png" id="jump_006"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/jump/return-007.png" id="jump_007"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/jump/return-008.png" id="jump_008"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/wave/return-001.png" id="wave_001"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/wave/return-002.png" id="wave_002"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/wave/return-003.png" id="wave_003"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/wave/return-004.png" id="wave_004"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/wave/return-005.png" id="wave_005"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/wave/return-006.png" id="wave_006"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/wave/return-007.png" id="wave_007"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-idle-return/wave/return-008.png" id="wave_008"]
+
+[resource]
+animations = [{
+"frames": [
+{"duration": 1.0, "texture": ExtResource("jump_001")},
+{"duration": 1.0, "texture": ExtResource("jump_002")},
+{"duration": 1.0, "texture": ExtResource("jump_003")},
+{"duration": 1.0, "texture": ExtResource("jump_004")},
+{"duration": 1.0, "texture": ExtResource("jump_005")},
+{"duration": 1.0, "texture": ExtResource("jump_006")},
+{"duration": 1.0, "texture": ExtResource("jump_007")},
+{"duration": 1.0, "texture": ExtResource("jump_008")},
+{"duration": 1.0, "texture": ExtResource("idle")}
+],
+"loop": false,
+"name": &"jump_return",
+"speed": 45.0
+}, {
+"frames": [
+{"duration": 1.0, "texture": ExtResource("wave_001")},
+{"duration": 1.0, "texture": ExtResource("wave_002")},
+{"duration": 1.0, "texture": ExtResource("wave_003")},
+{"duration": 1.0, "texture": ExtResource("wave_004")},
+{"duration": 1.0, "texture": ExtResource("wave_005")},
+{"duration": 1.0, "texture": ExtResource("wave_006")},
+{"duration": 1.0, "texture": ExtResource("wave_007")},
+{"duration": 1.0, "texture": ExtResource("wave_008")},
+{"duration": 1.0, "texture": ExtResource("idle")}
+],
+"loop": false,
+"name": &"wave_return",
+"speed": 45.0
+}]

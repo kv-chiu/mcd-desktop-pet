@@ -61,6 +61,83 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-059.png" id="59_4ymig"]
 [ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-060.png" id="60_e03p3"]
 
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-001.png" id="101_jmp01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-002.png" id="102_jmp02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-003.png" id="103_jmp03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-004.png" id="104_jmp04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-005.png" id="105_jmp05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-006.png" id="106_jmp06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-007.png" id="107_jmp07"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-008.png" id="108_jmp08"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-009.png" id="109_jmp09"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-010.png" id="110_jmp10"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-011.png" id="111_jmp11"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-012.png" id="112_jmp12"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-013.png" id="113_jmp13"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-014.png" id="114_jmp14"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-015.png" id="115_jmp15"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-016.png" id="116_jmp16"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-017.png" id="117_jmp17"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-018.png" id="118_jmp18"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-019.png" id="119_jmp19"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-020.png" id="120_jmp20"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-021.png" id="121_jmp21"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-022.png" id="122_jmp22"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-023.png" id="123_jmp23"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-024.png" id="124_jmp24"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-025.png" id="125_jmp25"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-026.png" id="126_jmp26"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-027.png" id="127_jmp27"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-jump-sprite/frames/shubao-jump-028.png" id="128_jmp28"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-001.png" id="201_wav01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-002.png" id="202_wav02"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-003.png" id="203_wav03"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-004.png" id="204_wav04"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-005.png" id="205_wav05"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-006.png" id="206_wav06"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-007.png" id="207_wav07"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-008.png" id="208_wav08"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-009.png" id="209_wav09"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-010.png" id="210_wav10"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-011.png" id="211_wav11"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-012.png" id="212_wav12"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-013.png" id="213_wav13"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-014.png" id="214_wav14"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-015.png" id="215_wav15"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-016.png" id="216_wav16"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-017.png" id="217_wav17"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-018.png" id="218_wav18"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-019.png" id="219_wav19"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-020.png" id="220_wav20"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-021.png" id="221_wav21"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-022.png" id="222_wav22"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-023.png" id="223_wav23"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-024.png" id="224_wav24"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-025.png" id="225_wav25"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-026.png" id="226_wav26"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-027.png" id="227_wav27"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-028.png" id="228_wav28"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-029.png" id="229_wav29"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-030.png" id="230_wav30"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-031.png" id="231_wav31"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-032.png" id="232_wav32"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-033.png" id="233_wav33"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-034.png" id="234_wav34"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-035.png" id="235_wav35"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-036.png" id="236_wav36"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-037.png" id="237_wav37"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-038.png" id="238_wav38"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-039.png" id="239_wav39"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-040.png" id="240_wav40"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-041.png" id="241_wav41"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-042.png" id="242_wav42"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-043.png" id="243_wav43"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-044.png" id="244_wav44"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-045.png" id="245_wav45"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-046.png" id="246_wav46"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-047.png" id="247_wav47"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-wave-sprite/frames/shubao-wave-048.png" id="248_wav48"]
+
 [resource]
 animations = [{
 "frames": [],
@@ -267,4 +344,242 @@ animations = [{
 "loop": 0,
 "name": &"walk_outro",
 "speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("101_jmp01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("102_jmp02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("103_jmp03")
+}, {
+"duration": 1.0,
+"texture": ExtResource("104_jmp04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("105_jmp05")
+}, {
+"duration": 1.0,
+"texture": ExtResource("106_jmp06")
+}, {
+"duration": 1.0,
+"texture": ExtResource("107_jmp07")
+}, {
+"duration": 1.0,
+"texture": ExtResource("108_jmp08")
+}, {
+"duration": 1.0,
+"texture": ExtResource("109_jmp09")
+}, {
+"duration": 1.0,
+"texture": ExtResource("110_jmp10")
+}, {
+"duration": 1.0,
+"texture": ExtResource("111_jmp11")
+}, {
+"duration": 1.0,
+"texture": ExtResource("112_jmp12")
+}, {
+"duration": 1.0,
+"texture": ExtResource("113_jmp13")
+}, {
+"duration": 1.0,
+"texture": ExtResource("114_jmp14")
+}, {
+"duration": 1.0,
+"texture": ExtResource("115_jmp15")
+}, {
+"duration": 1.0,
+"texture": ExtResource("116_jmp16")
+}, {
+"duration": 1.0,
+"texture": ExtResource("117_jmp17")
+}, {
+"duration": 1.0,
+"texture": ExtResource("118_jmp18")
+}, {
+"duration": 1.0,
+"texture": ExtResource("119_jmp19")
+}, {
+"duration": 1.0,
+"texture": ExtResource("120_jmp20")
+}, {
+"duration": 1.0,
+"texture": ExtResource("121_jmp21")
+}, {
+"duration": 1.0,
+"texture": ExtResource("122_jmp22")
+}, {
+"duration": 1.0,
+"texture": ExtResource("123_jmp23")
+}, {
+"duration": 1.0,
+"texture": ExtResource("124_jmp24")
+}, {
+"duration": 1.0,
+"texture": ExtResource("125_jmp25")
+}, {
+"duration": 1.0,
+"texture": ExtResource("126_jmp26")
+}, {
+"duration": 1.0,
+"texture": ExtResource("127_jmp27")
+}, {
+"duration": 1.0,
+"texture": ExtResource("128_jmp28")
+}],
+"loop": 0,
+"name": &"jump",
+"speed": 30.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("201_wav01")
+}, {
+"duration": 1.0,
+"texture": ExtResource("202_wav02")
+}, {
+"duration": 1.0,
+"texture": ExtResource("203_wav03")
+}, {
+"duration": 1.0,
+"texture": ExtResource("204_wav04")
+}, {
+"duration": 1.0,
+"texture": ExtResource("205_wav05")
+}, {
+"duration": 1.0,
+"texture": ExtResource("206_wav06")
+}, {
+"duration": 1.0,
+"texture": ExtResource("207_wav07")
+}, {
+"duration": 1.0,
+"texture": ExtResource("208_wav08")
+}, {
+"duration": 1.0,
+"texture": ExtResource("209_wav09")
+}, {
+"duration": 1.0,
+"texture": ExtResource("210_wav10")
+}, {
+"duration": 1.0,
+"texture": ExtResource("211_wav11")
+}, {
+"duration": 1.0,
+"texture": ExtResource("212_wav12")
+}, {
+"duration": 1.0,
+"texture": ExtResource("213_wav13")
+}, {
+"duration": 1.0,
+"texture": ExtResource("214_wav14")
+}, {
+"duration": 1.0,
+"texture": ExtResource("215_wav15")
+}, {
+"duration": 1.0,
+"texture": ExtResource("216_wav16")
+}, {
+"duration": 1.0,
+"texture": ExtResource("217_wav17")
+}, {
+"duration": 1.0,
+"texture": ExtResource("218_wav18")
+}, {
+"duration": 1.0,
+"texture": ExtResource("219_wav19")
+}, {
+"duration": 1.0,
+"texture": ExtResource("220_wav20")
+}, {
+"duration": 1.0,
+"texture": ExtResource("221_wav21")
+}, {
+"duration": 1.0,
+"texture": ExtResource("222_wav22")
+}, {
+"duration": 1.0,
+"texture": ExtResource("223_wav23")
+}, {
+"duration": 1.0,
+"texture": ExtResource("224_wav24")
+}, {
+"duration": 1.0,
+"texture": ExtResource("225_wav25")
+}, {
+"duration": 1.0,
+"texture": ExtResource("226_wav26")
+}, {
+"duration": 1.0,
+"texture": ExtResource("227_wav27")
+}, {
+"duration": 1.0,
+"texture": ExtResource("228_wav28")
+}, {
+"duration": 1.0,
+"texture": ExtResource("229_wav29")
+}, {
+"duration": 1.0,
+"texture": ExtResource("230_wav30")
+}, {
+"duration": 1.0,
+"texture": ExtResource("231_wav31")
+}, {
+"duration": 1.0,
+"texture": ExtResource("232_wav32")
+}, {
+"duration": 1.0,
+"texture": ExtResource("233_wav33")
+}, {
+"duration": 1.0,
+"texture": ExtResource("234_wav34")
+}, {
+"duration": 1.0,
+"texture": ExtResource("235_wav35")
+}, {
+"duration": 1.0,
+"texture": ExtResource("236_wav36")
+}, {
+"duration": 1.0,
+"texture": ExtResource("237_wav37")
+}, {
+"duration": 1.0,
+"texture": ExtResource("238_wav38")
+}, {
+"duration": 1.0,
+"texture": ExtResource("239_wav39")
+}, {
+"duration": 1.0,
+"texture": ExtResource("240_wav40")
+}, {
+"duration": 1.0,
+"texture": ExtResource("241_wav41")
+}, {
+"duration": 1.0,
+"texture": ExtResource("242_wav42")
+}, {
+"duration": 1.0,
+"texture": ExtResource("243_wav43")
+}, {
+"duration": 1.0,
+"texture": ExtResource("244_wav44")
+}, {
+"duration": 1.0,
+"texture": ExtResource("245_wav45")
+}, {
+"duration": 1.0,
+"texture": ExtResource("246_wav46")
+}, {
+"duration": 1.0,
+"texture": ExtResource("247_wav47")
+}, {
+"duration": 1.0,
+"texture": ExtResource("248_wav48")
+}],
+"loop": 0,
+"name": &"wave",
+"speed": 30.0
 }]

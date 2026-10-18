@@ -25,6 +25,7 @@ petRoutes.post('/action', async (c) => {
     'celebrate',
     'sleep',
     'wave',
+    'jump',
     'speak',
   ];
 
