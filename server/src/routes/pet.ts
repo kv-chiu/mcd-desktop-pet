@@ -35,14 +35,25 @@ petRoutes.post('/action', async (c) => {
     );
   }
 
-  // 广播给桌宠播放动画
-  wsHub.emitPetAction(action, { duration, speech, sound });
+  try {
+    // 广播给桌宠播放动画（内部持久化当前动作，若落盘失败则抛错并中止广播）
+    wsHub.emitPetAction(action, { duration, speech, sound });
 
-  return c.json({
-    success: true,
-    message: `已触发动作: ${action}`,
-    data: { action, duration, speech },
-  });
+    return c.json({
+      success: true,
+      message: `已触发动作: ${action}`,
+      data: { action, duration, speech },
+    });
+  } catch (err: any) {
+    console.error('[PetRoute] 触发动作持久化或广播失败:', err);
+    return c.json(
+      {
+        success: false,
+        error: `触发动作失败: ${err.message || '状态落盘异常'}`,
+      },
+      500
+    );
+  }
 });
 
 // 让桌宠说话（显示对话气泡）
@@ -66,16 +77,27 @@ petRoutes.post('/speak', async (c) => {
 
 // 与桌宠抚摸互动
 petRoutes.post('/interact', (c) => {
-  const { state, message } = storage.interactPet();
-  wsHub.emitStateUpdate(state);
-  wsHub.emitPetAction('jump', {
-    duration: 2.5,
-    speech: message,
-  });
+  try {
+    const { state, message } = storage.interactPet();
+    wsHub.emitStateUpdate(state);
+    wsHub.emitPetAction('jump', {
+      duration: 2.5,
+      speech: message,
+    });
 
-  return c.json({
-    success: true,
-    message,
-    data: state,
-  });
+    return c.json({
+      success: true,
+      message,
+      data: state,
+    });
+  } catch (err: any) {
+    console.error('[PetRoute] 桌宠互动持久化失败:', err);
+    return c.json(
+      {
+        success: false,
+        error: `桌宠互动失败: ${err.message || '状态落盘异常'}`,
+      },
+      500
+    );
+  }
 });

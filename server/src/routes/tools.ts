@@ -70,10 +70,14 @@ toolRoutes.post('/:name', async (c) => {
 
     // 关键规范：成功反馈只能由实际业务结果驱动
     if (result.petFeedback?.shouldFeedback) {
-      wsHub.emitPetAction(result.petFeedback.action, {
-        duration: result.petFeedback.duration,
-        speech: result.petFeedback.speech,
-      });
+      try {
+        wsHub.emitPetAction(result.petFeedback.action, {
+          duration: result.petFeedback.duration,
+          speech: result.petFeedback.speech,
+        });
+      } catch (err) {
+        console.error('[Tools] 桌宠反馈动作更新或广播失败:', err);
+      }
     }
 
     // 区分四个层级状态：
@@ -118,10 +122,14 @@ toolRoutes.post('/simulate', async (c) => {
     const result = await mcpGateway.executeTool(toolName, body.args || {}, undefined, { mockScenario: scenario });
 
     if (result.petFeedback?.shouldFeedback) {
-      wsHub.emitPetAction(result.petFeedback.action, {
-        duration: result.petFeedback.duration,
-        speech: result.petFeedback.speech,
-      });
+      try {
+        wsHub.emitPetAction(result.petFeedback.action, {
+          duration: result.petFeedback.duration,
+          speech: result.petFeedback.speech,
+        });
+      } catch (err) {
+        console.error('[Tools] 桌宠反馈动作更新或广播失败:', err);
+      }
     }
 
     const isToolSuccess = !result.isError && (result.layers ? result.layers.tool.success : true);
@@ -178,10 +186,14 @@ toolRoutes.post('/quick/auto-bind', async (c) => {
 
     // 只有实际业务结果驱动桌宠反馈
     if (result.petFeedback?.shouldFeedback) {
-      wsHub.emitPetAction(result.petFeedback.action, {
-        duration: result.petFeedback.duration,
-        speech: result.petFeedback.speech,
-      });
+      try {
+        wsHub.emitPetAction(result.petFeedback.action, {
+          duration: result.petFeedback.duration,
+          speech: result.petFeedback.speech,
+        });
+      } catch (err) {
+        console.error('[Tools] 桌宠反馈动作更新或广播失败:', err);
+      }
     }
 
     const isToolSuccess = !result.isError && (result.layers ? result.layers.tool.success : true);

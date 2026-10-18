@@ -154,12 +154,16 @@ export class WebSocketHub {
 
         case 'pet_click': {
           // 用户点击了桌宠
-          const { state, message } = storage.interactPet();
-          this.emitStateUpdate(state);
-          this.emitPetAction('jump', {
-            duration: 2.5,
-            speech: message,
-          });
+          try {
+            const { state, message } = storage.interactPet();
+            this.emitStateUpdate(state);
+            this.emitPetAction('jump', {
+              duration: 2.5,
+              speech: message,
+            });
+          } catch (err) {
+            console.error('[WebSocketHub] 点击桌宠互动持久化失败:', err);
+          }
           break;
         }
 

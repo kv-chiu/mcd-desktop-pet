@@ -25,11 +25,8 @@ configRoutes.get('/', (c) => {
 configRoutes.post('/', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const updateData: Record<string, any> = {};
-
   if (typeof body.token === 'string') {
     updateData.token = body.token.trim();
-    // 重置 MCP Gateway 会话以使其使用新 Token
-    mcpGateway.resetSession();
   }
   if (typeof body.mcpEndpoint === 'string' && body.mcpEndpoint.trim()) {
     updateData.mcpEndpoint = body.mcpEndpoint.trim();
@@ -44,20 +41,37 @@ configRoutes.post('/', async (c) => {
     updateData.autoStart = body.autoStart;
   }
 
-  const updated = storage.saveConfig(updateData);
-  const maskedToken = updated.token
-    ? `${updated.token.slice(0, 6)}...${updated.token.slice(-4)}`
-    : '';
+  try {
+    const updated = storage.saveConfig(updateData);
 
-  return c.json({
-    success: true,
-    message: '配置已更新保存',
-    data: {
-      ...updated,
-      token: maskedToken,
-      hasToken: Boolean(updated.token),
-    },
-  });
+    // 仅在配置成功持久化后，若更新了 Token 则重置 MCP Gateway 会话
+    if (typeof body.token === 'string') {
+      mcpGateway.resetSession();
+    }
+
+    const maskedToken = updated.token
+      ? `${updated.token.slice(0, 6)}...${updated.token.slice(-4)}`
+      : '';
+
+    return c.json({
+      success: true,
+      message: '配置已更新保存',
+      data: {
+        ...updated,
+        token: maskedToken,
+        hasToken: Boolean(updated.token),
+      },
+    });
+  } catch (err: any) {
+    console.error('[ConfigRoute] 保存配置失败:', err);
+    return c.json(
+      {
+        success: false,
+        error: `保存配置失败: ${err.message || '磁盘写入异常'}`,
+      },
+      500
+    );
+  }
 });
 
 // 获取历史操作记录

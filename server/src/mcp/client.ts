@@ -347,11 +347,15 @@ export class McpGatewayClient {
         petFeedback: evaluation.petFeedback,
       };
 
-      storage.recordHistory({
-        type: 'tool_call',
-        summary: `执行工具: ${actualToolName} [${evaluation.business.outcome}]`,
-        details: { args: cleanArgs, durationMs, outcome: evaluation.business.outcome, isError },
-      });
+      try {
+        storage.recordHistory({
+          type: 'tool_call',
+          summary: `执行工具: ${actualToolName} [${evaluation.business.outcome}]`,
+          details: { args: cleanArgs, durationMs, outcome: evaluation.business.outcome, isError },
+        });
+      } catch (historyErr) {
+        console.error('[McpGateway] 写入工具调用历史失败:', historyErr);
+      }
 
       return result;
     } catch (err: any) {

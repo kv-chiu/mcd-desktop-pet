@@ -54,8 +54,21 @@ export class StorageService {
         fs.mkdirSync(this.baseDir, { recursive: true });
       } catch (err) {
         console.error('Failed to create storage directory:', err);
+        throw err;
       }
     }
+  }
+
+  setBaseDir(dir: string): void {
+    this.baseDir = dir;
+    this.configPath = path.join(this.baseDir, 'config.json');
+    this.petStatePath = path.join(this.baseDir, 'pet_state.json');
+    this.historyPath = path.join(this.baseDir, 'history.json');
+    this.ensureDirectory();
+  }
+
+  getBaseDir(): string {
+    return this.baseDir;
   }
 
   // --- Config Storage ---
@@ -77,10 +90,11 @@ export class StorageService {
     try {
       this.ensureDirectory();
       fs.writeFileSync(this.configPath, JSON.stringify(updated, null, 2), 'utf-8');
+      return updated;
     } catch (err) {
       console.error('Error writing config:', err);
+      throw err;
     }
-    return updated;
   }
 
   // --- Pet State Storage ---
@@ -135,10 +149,11 @@ export class StorageService {
     try {
       this.ensureDirectory();
       fs.writeFileSync(this.petStatePath, JSON.stringify(updated, null, 2), 'utf-8');
+      return updated;
     } catch (err) {
       console.error('Error writing pet state:', err);
+      throw err;
     }
-    return updated;
   }
 
   interactPet(): { state: PetState; message: string } {
@@ -151,10 +166,20 @@ export class StorageService {
       lastInteractedTime: new Date().toISOString(),
     });
 
-    this.recordHistory({
-      type: 'pet_action',
-      summary: '主人抚摸了桌宠 (+5 好感度)',
-    });
+    try {
+      this.recordHistory({
+        type: 'pet_action',
+        summary: '主人抚摸了桌宠 (+5 好感度)',
+      });
+    } catch (historyErr) {
+      console.error('Failed to record history for interactPet, reverting pet state:', historyErr);
+      try {
+        this.updatePetState(current);
+      } catch (revertErr) {
+        console.error('Failed to revert pet state:', revertErr);
+      }
+      throw historyErr;
+    }
 
     return { state: updated, message: '主人摸摸头，今天也要开心鸭！' };
   }
@@ -173,26 +198,43 @@ export class StorageService {
     return [];
   }
 
-  recordHistory(record: Omit<ActionHistoryRecord, 'id' | 'timestamp'>): void {
+  recordHistory(record: Omit<ActionHistoryRecord, 'id' | 'timestamp'>): ActionHistoryRecord {
+    let list: ActionHistoryRecord[] = [];
     try {
-      let list: ActionHistoryRecord[] = [];
       if (fs.existsSync(this.historyPath)) {
         const raw = fs.readFileSync(this.historyPath, 'utf-8');
-        list = JSON.parse(raw);
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            list = parsed;
+          }
+        } catch {
+          list = [];
+        }
       }
-      list.push({
-        ...record,
-        id: `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-        timestamp: new Date().toISOString(),
-      });
-      // Keep up to 200 records
-      if (list.length > 200) {
-        list = list.slice(list.length - 200);
-      }
+    } catch (err) {
+      console.warn('Error reading history prior to record:', err);
+    }
+
+    const newRecord: ActionHistoryRecord = {
+      ...record,
+      id: `${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      timestamp: new Date().toISOString(),
+    };
+    list.push(newRecord);
+
+    // Keep up to 200 records
+    if (list.length > 200) {
+      list = list.slice(list.length - 200);
+    }
+
+    try {
       this.ensureDirectory();
       fs.writeFileSync(this.historyPath, JSON.stringify(list, null, 2), 'utf-8');
+      return newRecord;
     } catch (err) {
       console.error('Error writing history:', err);
+      throw err;
     }
   }
 }
