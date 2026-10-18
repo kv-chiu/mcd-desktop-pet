@@ -1,18 +1,42 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { evaluateToolLayers } from '@mcd/shared';
-import { mcpGateway } from '../src/mcp/client.js';
+import { storage } from '../src/storage/index.js';
 import { wsHub } from '../src/ws/hub.js';
 import app from '../src/index.js';
 
 test('【分层状态与业务驱动反馈测试】', async (t) => {
-  // 收集桌宠收到的事件广播
+  // 创建独立的临时测试目录隔离真实用户环境，防止写入真实动作状态和模拟历史
+  const testDir = path.join(os.tmpdir(), `mcd_test_layers_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
+  fs.mkdirSync(testDir, { recursive: true });
+
+  const originalBaseDir = storage.getBaseDir();
+  storage.setBaseDir(testDir);
+
+  // 初始化测试隔离存储配置与桌宠状态
+  storage.saveConfig({ petName: '测试麦麦宝', token: 'test_token_layers_123' });
+  storage.updatePetState({ favor: 60, experience: 0, currentAction: 'idle' });
+
+  // 收集桌宠收到的事件广播（拦截并隔离，不调用原始实现，避免污染底层桌宠真实动作状态与 WebSocket 广播）
   const emittedPetActions: Array<{ action: string; speech?: string }> = [];
   const originalEmitPetAction = wsHub.emitPetAction.bind(wsHub);
   wsHub.emitPetAction = (action, options) => {
     emittedPetActions.push({ action, speech: options?.speech });
-    originalEmitPetAction(action, options);
   };
+
+  // 通过测试清理钩子可靠恢复现场
+  t.after(() => {
+    wsHub.emitPetAction = originalEmitPetAction;
+    storage.setBaseDir(originalBaseDir);
+    try {
+      fs.rmSync(testDir, { recursive: true, force: true });
+    } catch {
+      // ignore
+    }
+  });
 
   await t.test('1. 模拟工具返回 result.isError: true，文本“优惠券领取失败”', async () => {
     emittedPetActions.length = 0;
@@ -454,7 +478,4 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
     assert.equal(evalSuccess.petFeedback?.action, 'wave');
     assert.ok(evalSuccess.petFeedback?.speech.includes('订单已创建'));
   });
-
-  // 恢复
-  wsHub.emitPetAction = originalEmitPetAction;
 });
