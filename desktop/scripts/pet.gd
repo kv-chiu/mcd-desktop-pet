@@ -27,6 +27,7 @@ var walk_duration: float = 4.0
 var idle_time: float = 0.0
 var next_walk_delay: float = 4.0
 var auto_walk_enabled: bool = true
+var is_stopping_walk: bool = false
 
 # 动作计时
 var action_name: String = ""
@@ -41,6 +42,7 @@ var window_manager: WindowManager = null
 func _ready() -> void:
 	anim_sprite.position = Vector2(160, base_pos_y)
 	anim_sprite.animation_finished.connect(_on_animation_finished)
+	anim_sprite.animation_looped.connect(_on_animation_looped)
 	next_walk_delay = randf_range(3.0, 6.0)
 	play_idle()
 
@@ -165,6 +167,7 @@ func start_random_walk() -> void:
 
 func start_walk(direction: int) -> void:
 	var target_dir = -1 if direction < 0 else 1
+	is_stopping_walk = false
 	
 	if is_flipping:
 		pending_walk_dir = target_dir
@@ -222,14 +225,22 @@ func _process_walk_loop(delta: float) -> void:
 			)
 			return
 			
-	# 行走时间到，进入后奏停步
-	if walk_timer >= walk_duration:
-		stop_walk()
+	# 行走时间到，请求停步（等当前循环完整走完最后一帧再刹车）
+	if walk_timer >= walk_duration and not is_stopping_walk:
+		stop_walk(false)
 
-func stop_walk() -> void:
-	if current_state == State.WALK_INTRO or current_state == State.WALK_LOOP:
-		current_state = State.WALK_OUTRO
-		anim_sprite.play("walk_outro")
+func stop_walk(immediate: bool = false) -> void:
+	if immediate:
+		if current_state == State.WALK_INTRO or current_state == State.WALK_LOOP:
+			_enter_walk_outro()
+	else:
+		if current_state == State.WALK_LOOP or current_state == State.WALK_INTRO:
+			is_stopping_walk = true
+
+func _enter_walk_outro() -> void:
+	is_stopping_walk = false
+	current_state = State.WALK_OUTRO
+	anim_sprite.play("walk_outro")
 
 func _process_walk_outro(delta: float) -> void:
 	# 后奏平稳减速刹车
@@ -239,12 +250,18 @@ func _process_walk_outro(delta: float) -> void:
 
 func interrupt_walk() -> void:
 	# 用户拖拽或强制中断时调用
+	is_stopping_walk = false
 	current_speed = 0.0
 	idle_time = 0.0
 	next_walk_delay = randf_range(4.0, 8.0)
 	play_idle()
 
-# ==================== 动画完成回调 ====================
+# ==================== 动画完成/循环回调 ====================
+
+func _on_animation_looped() -> void:
+	# 当前行走循环结束时，如果已请求停步且未在翻转中，平滑无缝切入刹车后奏
+	if current_state == State.WALK_LOOP and is_stopping_walk and not is_flipping:
+		_enter_walk_outro()
 
 func _on_animation_finished() -> void:
 	match anim_sprite.animation:
@@ -260,6 +277,7 @@ func _on_animation_finished() -> void:
 # ==================== 其它动作/互动 ====================
 
 func play_action_by_name(act_name: String, duration: float = 3.0) -> void:
+	is_stopping_walk = false
 	action_name = act_name
 	action_duration = duration
 	action_timer = 0.0
