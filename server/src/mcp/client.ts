@@ -265,6 +265,21 @@ export class McpGatewayClient {
           },
         };
 
+      case 'order-full-success':
+        return {
+          jsonrpc: '2.0',
+          id: Date.now(),
+          result: {
+            content: [
+              {
+                type: 'text',
+                text: '{"orderId":"MCD-20261019-8204","orderNo":"MCD8204","pickupCode":"#8204","status":"CONFIRMED","message":"订单已成功创建，麦麦厨房正在加速备餐中"}',
+              },
+            ],
+            isError: false,
+          },
+        };
+
       case 'calendar-tool-error':
         return {
           jsonrpc: '2.0',

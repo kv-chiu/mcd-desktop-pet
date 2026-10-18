@@ -19,7 +19,8 @@
     "bundle:server": "esbuild server/src/index.ts --bundle --platform=node --target=node20 --format=esm --banner:js=\"import { createRequire as __createRequire } from 'module'; const require = __createRequire(import.meta.url);\" --outfile=dist/bundle/server.bundle.mjs",
     "bundle:cli": "esbuild cli/src/index.ts --bundle --platform=node --target=node20 --format=esm --banner:js=\"import { createRequire as __createRequire } from 'module'; const require = __createRequire(import.meta.url);\" --outfile=dist/bundle/cli.bundle.mjs",
     "bundle": "pnpm bundle:server && pnpm bundle:cli",
-    "release": "python3 scripts/build-release.py"
+    "release": "python3 scripts/build-release.py",
+    "mock:lunch": "python3 scripts/mock-lunch-scenario.py"
   },
   "devDependencies": {
     "esbuild": "^0.28.2"

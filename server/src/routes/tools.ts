@@ -124,10 +124,13 @@ toolRoutes.post('/simulate', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const scenario = body.scenario || c.req.header('x-mock-scenario') || c.req.query('mock') || 'coupon-tool-error';
   const toolName = body.toolName || 'auto-bind-coupons';
+  const notifyPet = body.notifyPet !== false && c.req.query('notifyPet') !== 'false';
 
   try {
     const result = await mcpGateway.executeTool(toolName, body.args || {}, undefined, { mockScenario: scenario });
-    handlePetFeedback(result);
+    if (notifyPet) {
+      handlePetFeedback(result);
+    }
     return c.json(formatToolResponse(result, '模拟执行未成功', { scenario }));
   } catch (err: any) {
     return c.json(
@@ -222,9 +225,13 @@ toolRoutes.post('/:name', async (c) => {
     body = {};
   }
 
+  const notifyPet = (body as any)?.notifyPet !== false && c.req.query('notifyPet') !== 'false';
+
   try {
     const result = await mcpGateway.executeTool(toolName, body, overrideToken, { mockScenario });
-    handlePetFeedback(result);
+    if (notifyPet) {
+      handlePetFeedback(result);
+    }
     return c.json(formatToolResponse(result, '执行未成功'));
   } catch (err: any) {
     return c.json(
