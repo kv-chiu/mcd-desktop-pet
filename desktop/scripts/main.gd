@@ -54,9 +54,9 @@ func _setup_context_menu() -> void:
 	context_menu.add_theme_font_override("font", font)
 
 	context_menu.clear()
-	context_menu.add_item("🚶 散步走走", 10)
-	context_menu.add_item("🔄 转身翻转", 11)
-	context_menu.add_item("⏸️ 停下休息", 12)
+	context_menu.add_item("散步走走", 10)
+	context_menu.add_item("转身翻转", 11)
+	context_menu.add_item("停下休息", 12)
 	context_menu.add_separator()
 	
 	# 全屏穿透开关选项
@@ -65,14 +65,9 @@ func _setup_context_menu() -> void:
 	context_menu.add_item(check_symbol + "在全屏应用中显示桌宠", 13)
 	
 	context_menu.add_separator()
-	context_menu.add_item("🍔 喂食汉堡", 0)
-	context_menu.add_item("🥤 喝冰可乐", 1)
-	context_menu.add_item("🎉 麦麦庆祝", 2)
-	context_menu.add_item("😴 睡觉休息", 3)
+	context_menu.add_item("打开 Web 控制台", 4)
 	context_menu.add_separator()
-	context_menu.add_item("💻 打开 Web 控制台", 4)
-	context_menu.add_separator()
-	context_menu.add_item("❌ 退出桌宠", 5)
+	context_menu.add_item("退出桌宠", 5)
 
 func _on_menu_item_selected(id: int) -> void:
 	match id:
@@ -93,18 +88,6 @@ func _on_menu_item_selected(id: int) -> void:
 				speech_bubble.show_speech("已开启全屏穿透！全屏应用下也能看到我啦~🍟✨", 3.5)
 			else:
 				speech_bubble.show_speech("已关闭全屏穿透，恢复普通窗口模式~", 2.5)
-		0:
-			pet.play_action_by_name("eat_burger", 3.5)
-			speech_bubble.show_speech("麦辣鸡腿堡大口嚼！真香~🍔", 3.0)
-		1:
-			pet.play_action_by_name("drink_coke", 3.5)
-			speech_bubble.show_speech("冰爽可乐吨吨吨！元气满满~🥤", 3.0)
-		2:
-			pet.play_action_by_name("celebrate", 3.0)
-			speech_bubble.show_speech("好耶！麦麦大获全胜！🎉", 3.0)
-		3:
-			pet.play_action_by_name("sleep", 5.0)
-			speech_bubble.show_speech("小憩一下，Zzz...", 2.5)
 		4:
 			OS.shell_open("http://localhost:8080")
 		5:
