@@ -11,31 +11,8 @@ export interface AppConfig {
   autoStart: boolean;
 }
 
-export type PetMood = 'happy' | 'normal';
-export type PetActionType =
-  | 'idle'
-  | 'wave'
-  | 'jump'
-  | 'speak';
-
-export interface PetState {
-  name: string;
-  favor: number;  // 0 - 100
-  mood: PetMood;
-  level: number;
-  experience: number;
-  currentAction: PetActionType;
-  lastInteractedTime: string;
-  updatedAt: string;
-}
-
-export interface ActionHistoryRecord {
-  id: string;
-  type: 'pet_action' | 'tool_call' | 'system';
-  summary: string;
-  details?: any;
-  timestamp: string;
-}
+import { PetMood, PetActionType, PetState, ActionHistoryRecord } from '@mcd/shared';
+export { PetMood, PetActionType, PetState, ActionHistoryRecord };
 
 const DEFAULT_CONFIG: AppConfig = {
   token: process.env.MCD_MCP_TOKEN || '',

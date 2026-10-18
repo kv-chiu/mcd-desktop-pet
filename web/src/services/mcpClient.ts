@@ -1,17 +1,15 @@
-import { MCPResponse, MCPToolSchema } from '../types/mcp';
-import { OFFICIAL_TOOLS, TOOL_MAP } from './toolRegistry';
+import {
+  ExecuteResult,
+  MCPToolSchema,
+  OFFICIAL_TOOLS,
+  TOOL_MAP,
+  normalizeToolName,
+} from '@mcd/shared';
 
-export interface ExecuteResult {
-  toolName: string;
-  args: Record<string, any>;
-  result: any;
-  durationMs: number;
-  timestamp: string;
-  error?: string;
-}
+export type { ExecuteResult };
 
 class MCPClientService {
-  private mcpUrl: string = '/mcp';
+  private apiBase: string = '/api/tools';
   private sessionId: string | null = null;
   private serverTools: MCPToolSchema[] = [];
 
@@ -28,117 +26,82 @@ class MCPClientService {
   }
 
   /**
-   * 基础 JSON-RPC 2.0 请求
+   * 初始化连接 MCP 会话（通过 Server 中枢网关握手）
    */
-  async callMCP<T = any>(token: string, method: string, params?: any): Promise<MCPResponse<T>> {
+  async initialize(token: string): Promise<any> {
     if (!token || !token.trim()) {
       throw new Error('未提供 MCP Token，请在顶部设置您的 Token');
     }
 
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${token.trim()}`,
-      'Content-Type': 'application/json',
-    };
-
-    if (this.sessionId) {
-      headers['Mcp-Session-Id'] = this.sessionId;
-    }
-
-    const resp = await fetch(this.mcpUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        jsonrpc: '2.0',
-        id: Date.now(),
-        method,
-        params,
-      }),
-    });
-
-    const newSessionId = resp.headers.get('Mcp-Session-Id');
-    if (newSessionId) {
-      this.sessionId = newSessionId;
-    }
-
-    if (resp.status === 401) {
-      this.resetSession();
-      throw new Error('MCP Token 无效或已失效 (401)，请检查并在官方控制台重新获取');
-    }
-
-    if (resp.status === 429) {
-      throw new Error('触发麦当劳 MCP 限流 (429，每分钟超过600次请求)，请稍后再试');
-    }
-
-    if (!resp.ok && resp.status >= 500) {
-      const errText = await resp.text().catch(() => '');
-      throw new Error(`服务器错误 (${resp.status}): ${errText || resp.statusText}`);
-    }
-
-    const contentType = resp.headers.get('content-type') || '';
-    if (!contentType.includes('application/json')) {
-      const text = await resp.text();
-      throw new Error(`非预期返回格式: ${text.slice(0, 200)}`);
-    }
-
-    return resp.json();
-  }
-
-  /**
-   * 初始化连接 MCP 会话
-   */
-  async initialize(token: string): Promise<any> {
-    const initResp = await this.callMCP(token, 'initialize', {
-      protocolVersion: '2024-11-05',
-      capabilities: {
-        tools: {
-          listChanged: true,
+    try {
+      const resp = await fetch(`${this.apiBase}/initialize`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token.trim()}`,
+          'Content-Type': 'application/json',
         },
-      },
-      clientInfo: {
-        name: 'mcd-mcp-webui',
-        version: '1.0.9',
-      },
-    });
+      });
 
-    if (initResp.error) {
-      throw new Error(`初始化失败: ${initResp.error.message}`);
+      const data = await resp.json().catch(() => ({}));
+
+      if (!resp.ok || !data.success) {
+        throw new Error(data.error || `连接 MCP 服务失败 (${resp.status})`);
+      }
+
+      this.sessionId = data.sessionId || `session_${Date.now()}`;
+      return data.data;
+    } catch (err: any) {
+      this.resetSession();
+      if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+        throw new Error('无法连接到桌宠中枢服务 (localhost:3001)，请确认后端服务已启动');
+      }
+      throw err;
     }
-
-    return initResp.result;
   }
 
   /**
    * 从服务端动态获取支持的 Tool 列表
    */
   async listTools(token: string): Promise<MCPToolSchema[]> {
-    if (!this.sessionId) {
-      await this.initialize(token);
-    }
-
     try {
-      const resp = await this.callMCP<{ tools: MCPToolSchema[] }>(token, 'tools/list', {});
-      if (resp.result?.tools) {
-        this.serverTools = resp.result.tools;
-        return resp.result.tools;
+      const headers: Record<string, string> = {};
+      if (token && token.trim()) {
+        headers['Authorization'] = `Bearer ${token.trim()}`;
       }
-      return [];
-    } catch (err: any) {
-      console.warn('获取 tools/list 失败，使用内置官方定义:', err);
-      return [];
+
+      const resp = await fetch(this.apiBase, { headers });
+      const data = await resp.json().catch(() => ({}));
+
+      if (data.success && Array.isArray(data.data)) {
+        this.serverTools = data.data;
+        return data.data;
+      }
+      return OFFICIAL_TOOLS.map((t) => ({
+        name: t.name,
+        description: t.description,
+        inputSchema: t.inputSchema,
+        category: t.category,
+      }));
+    } catch (err) {
+      console.warn('获取 tools 列表失败，降级使用内置官方定义:', err);
+      return OFFICIAL_TOOLS.map((t) => ({
+        name: t.name,
+        description: t.description,
+        inputSchema: t.inputSchema,
+        category: t.category,
+      }));
     }
   }
 
   /**
-   * 规范化 Tool 名称，兼容别名
+   * 规范化 Tool 名称，兼容历史别名
    */
   normalizeToolName(toolName: string): string {
-    if (toolName === 'campaign-calender') return 'campaign-calendar';
-    if (toolName === 'my-coupons') return 'query-my-coupons';
-    return toolName;
+    return normalizeToolName(toolName);
   }
 
   /**
-   * 执行指定 Tool 并计时记录
+   * 执行指定 Tool 并计时记录（通过 Server 中枢网关，自动联动桌宠）
    */
   async executeTool(
     token: string,
@@ -157,33 +120,59 @@ class MCPClientService {
     });
 
     try {
-      if (!this.sessionId) {
-        await this.initialize(token);
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (token && token.trim()) {
+        headers['Authorization'] = `Bearer ${token.trim()}`;
       }
 
-      const resp = await this.callMCP(token, 'tools/call', {
-        name: actualToolName,
-        arguments: cleanArgs,
+      const resp = await fetch(`${this.apiBase}/${actualToolName}`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(cleanArgs),
       });
 
-      const durationMs = Math.round(performance.now() - startTime);
+      const body = await resp.json().catch(() => ({}));
 
-      if (resp.error) {
-        throw new Error(resp.error.message || 'MCP 执行返回未知错误');
+      if (!resp.ok || !body.success) {
+        const errorMsg = body.error || `执行工具失败 (${resp.status})`;
+        const durationMs = Math.round(performance.now() - startTime);
+        const errObj: any = new Error(errorMsg);
+        errObj.toolName = actualToolName;
+        errObj.args = cleanArgs;
+        errObj.durationMs = durationMs;
+        errObj.timestamp = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+        errObj.result = body.details || null;
+        throw errObj;
       }
 
-      return {
+      const resultData: ExecuteResult = body.data || {
         toolName: actualToolName,
         args: cleanArgs,
-        result: resp.result,
-        durationMs,
+        result: body.data,
+        durationMs: Math.round(performance.now() - startTime),
         timestamp: new Date().toLocaleTimeString('zh-CN', { hour12: false }),
       };
+
+      if (!this.sessionId) {
+        this.sessionId = `session_${Date.now()}`;
+      }
+
+      return resultData;
     } catch (err: any) {
-      this.resetSession();
+      if (err.toolName) {
+        throw err;
+      }
       const durationMs = Math.round(performance.now() - startTime);
+      const isConnError =
+        err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError');
+      const message = isConnError
+        ? '无法连接到桌宠中枢服务 (localhost:3001)，请确认后端服务已启动'
+        : err.message || '调用工具异常';
+
       throw {
-        message: err.message || '调用工具异常',
+        message,
         toolName: actualToolName,
         args: cleanArgs,
         durationMs,

@@ -1,27 +1,13 @@
 import { WSContext } from 'hono/ws';
-import { storage, PetState, PetActionType } from '../storage/index.js';
-
-export type WsClientType = 'desktop' | 'web' | 'cli' | 'skill';
+import { storage } from '../storage/index.js';
+import { WsClientType, WsMessage, PetState, PetActionType } from '@mcd/shared';
+export { WsClientType, WsMessage };
 
 export interface ConnectedClient {
   id: string;
   type: WsClientType;
   ws: WSContext;
   connectedAt: string;
-}
-
-export interface WsMessage<T = any> {
-  type:
-    | 'identify'
-    | 'pet_action'
-    | 'pet_speech'
-    | 'pet_state_update'
-    | 'pet_click'
-    | 'system_notice'
-    | 'ping'
-    | 'pong';
-  timestamp: string;
-  payload?: T;
 }
 
 export class WebSocketHub {

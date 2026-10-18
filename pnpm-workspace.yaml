@@ -1,6 +1,7 @@
 packages:
   - 'server'
   - 'web'
+  - 'shared'
 
 catalog:
   typescript: ~5.7.2

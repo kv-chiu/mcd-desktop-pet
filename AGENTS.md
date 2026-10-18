@@ -17,6 +17,11 @@ mcd-desktop-pet/
 ├── web/                      # 可视化控制台 (React 19 + Vite)
 │   ├── src/
 │   └── package.json
+├── shared/                   # 跨端共享协议与元数据 (@mcd/shared)
+│   ├── src/
+│   │   ├── types/            # MCP JSON-RPC、WebSocket 协议与桌宠状态类型
+│   │   └── constants/        # 33 项官方工具单一事实源 (Single Source of Truth)
+│   └── package.json
 ├── cli/                      # 终端命令行工具
 ├── skill/                    # AI Agent 技能集成
 │   ├── SKILL.md

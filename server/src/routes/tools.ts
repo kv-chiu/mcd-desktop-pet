@@ -28,6 +28,29 @@ toolRoutes.get('/', async (c) => {
   }
 });
 
+// 初始化与握手检测
+toolRoutes.post('/initialize', async (c) => {
+  const authHeader = c.req.header('Authorization');
+  const overrideToken = authHeader ? authHeader.replace(/^Bearer\s+/i, '') : undefined;
+
+  try {
+    const result = await mcpGateway.initialize(overrideToken);
+    return c.json({
+      success: true,
+      sessionId: mcpGateway.getSessionId(),
+      data: result,
+    });
+  } catch (err: any) {
+    return c.json(
+      {
+        success: false,
+        error: err.message || 'MCP 握手失败',
+      },
+      400
+    );
+  }
+});
+
 // 执行指定的 MCP 工具
 toolRoutes.post('/:name', async (c) => {
   const toolName = c.req.param('name');
