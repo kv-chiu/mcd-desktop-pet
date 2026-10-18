@@ -1,6 +1,13 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/pet.gd" id="1_pet"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/shubao-walk-sprite/shubao_frames.tres" id="2_frames"]
 
 [node name="Pet" type="Node2D"]
 script = ExtResource("1_pet")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(160, 180)
+sprite_frames = ExtResource("2_frames")
+animation = &"idle"
+autoplay = "idle"

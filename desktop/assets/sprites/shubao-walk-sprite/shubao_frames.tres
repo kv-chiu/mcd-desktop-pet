@@ -1,0 +1,270 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-001.png" id="1_hxyaf"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-002.png" id="2_umr4n"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-003.png" id="3_7nhho"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-004.png" id="4_etb6u"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-005.png" id="5_m4s3w"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-006.png" id="6_eu3ql"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-007.png" id="7_n2mny"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-008.png" id="8_8btfn"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-009.png" id="9_p1ptn"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-010.png" id="10_leh4x"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-011.png" id="11_6h8j1"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-012.png" id="12_mokvo"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-013.png" id="13_i8gx7"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-014.png" id="14_c8n8t"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-015.png" id="15_vempv"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-016.png" id="16_cytj6"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-017.png" id="17_8r148"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-018.png" id="18_g715k"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-019.png" id="19_ord1j"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-020.png" id="20_w87st"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-021.png" id="21_eipyq"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-022.png" id="22_bgwbe"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-023.png" id="23_0kn4r"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-024.png" id="24_5bfn6"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-025.png" id="25_t4dum"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-026.png" id="26_rbr6e"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-027.png" id="27_dwe6d"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-028.png" id="28_p5jgp"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-029.png" id="29_j1l3h"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-030.png" id="30_faktc"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-031.png" id="31_d7vtp"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-032.png" id="32_cfxg5"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-033.png" id="33_pdqj8"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-034.png" id="34_hmymb"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-035.png" id="35_n8qa0"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-036.png" id="36_lmshv"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-037.png" id="37_jb3yi"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-038.png" id="38_xlind"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-039.png" id="39_8s80t"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-040.png" id="40_mofpx"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-041.png" id="41_m6l6w"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-042.png" id="42_2aqd4"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-043.png" id="43_7js0q"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-044.png" id="44_1smk0"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-045.png" id="45_63td2"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-046.png" id="46_671es"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-047.png" id="47_6wocp"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-048.png" id="48_mh7t4"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-049.png" id="49_c1ksy"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-050.png" id="50_ock2h"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-051.png" id="51_1qaip"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-052.png" id="52_23yft"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-053.png" id="53_s0pmf"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-054.png" id="54_q2pcg"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-055.png" id="55_07fte"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-056.png" id="56_5cq61"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-057.png" id="57_eqe27"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-058.png" id="58_04sk8"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-059.png" id="59_4ymig"]
+[ext_resource type="Texture2D" path="res://assets/sprites/shubao-walk-sprite/frames/shubao-walk-060.png" id="60_e03p3"]
+
+[resource]
+animations = [{
+"frames": [],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_hxyaf")
+}],
+"loop": 1,
+"name": &"idle",
+"speed": 1.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_umr4n")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_7nhho")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_etb6u")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_m4s3w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_eu3ql")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_n2mny")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_8btfn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_p1ptn")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_leh4x")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_6h8j1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_mokvo")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_i8gx7")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_c8n8t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_vempv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_cytj6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_8r148")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_g715k")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_ord1j")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_w87st")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_eipyq")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_bgwbe")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_0kn4r")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_5bfn6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_t4dum")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_rbr6e")
+}],
+"loop": 0,
+"name": &"walk_intro",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("27_dwe6d")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28_p5jgp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_j1l3h")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_faktc")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31_d7vtp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32_cfxg5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("33_pdqj8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_hmymb")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35_n8qa0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_lmshv")
+}, {
+"duration": 1.0,
+"texture": ExtResource("37_jb3yi")
+}, {
+"duration": 1.0,
+"texture": ExtResource("38_xlind")
+}, {
+"duration": 1.0,
+"texture": ExtResource("39_8s80t")
+}, {
+"duration": 1.0,
+"texture": ExtResource("40_mofpx")
+}, {
+"duration": 1.0,
+"texture": ExtResource("41_m6l6w")
+}, {
+"duration": 1.0,
+"texture": ExtResource("42_2aqd4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("43_7js0q")
+}, {
+"duration": 1.0,
+"texture": ExtResource("44_1smk0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("45_63td2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("46_671es")
+}, {
+"duration": 1.0,
+"texture": ExtResource("47_6wocp")
+}, {
+"duration": 1.0,
+"texture": ExtResource("48_mh7t4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("49_c1ksy")
+}],
+"loop": 1,
+"name": &"walk_loop",
+"speed": 24.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("50_ock2h")
+}, {
+"duration": 1.0,
+"texture": ExtResource("51_1qaip")
+}, {
+"duration": 1.0,
+"texture": ExtResource("52_23yft")
+}, {
+"duration": 1.0,
+"texture": ExtResource("53_s0pmf")
+}, {
+"duration": 1.0,
+"texture": ExtResource("54_q2pcg")
+}, {
+"duration": 1.0,
+"texture": ExtResource("55_07fte")
+}, {
+"duration": 1.0,
+"texture": ExtResource("56_5cq61")
+}, {
+"duration": 1.0,
+"texture": ExtResource("57_eqe27")
+}, {
+"duration": 1.0,
+"texture": ExtResource("58_04sk8")
+}, {
+"duration": 1.0,
+"texture": ExtResource("59_4ymig")
+}, {
+"duration": 1.0,
+"texture": ExtResource("60_e03p3")
+}],
+"loop": 0,
+"name": &"walk_outro",
+"speed": 24.0
+}]

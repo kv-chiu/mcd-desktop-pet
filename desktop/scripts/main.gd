@@ -1,15 +1,27 @@
 extends Control
 
-@onready var pet: Node2D = $Pet
+@onready var pet: DesktopPet = $Pet
 @onready var speech_bubble: Control = $SpeechBubble
 @onready var ws_client: Node = $WsClient
-@onready var window_mgr: Node = $WindowManager
+@onready var window_mgr: WindowManager = $WindowManager
 @onready var context_menu: PopupMenu = $ContextMenu
 
+var random_quotes = [
+	"热乎乎的薯条出炉啦！🍟",
+	"主人摸摸头，今天也要元气满满鸭！✨",
+	"走走散散步，肚子消化了又想吃麦辣鸡翅~🍗",
+	"薯条小宝随叫随到！有什么麦麦优惠吗？🍟",
+	"咔嚓咔嚓，香脆每一天！😋"
+]
+
 func _ready() -> void:
-	# Connect window manager input & clicks
+	# Inject window manager into pet
+	pet.window_manager = window_mgr
+	
+	# Connect window manager input & drag events
 	window_mgr.pet_clicked.connect(_on_pet_clicked)
 	window_mgr.open_context_menu.connect(_on_open_context_menu)
+	window_mgr.drag_started.connect(_on_drag_started)
 
 	# Connect WebSocket events
 	ws_client.connected.connect(_on_ws_connected)
@@ -18,16 +30,32 @@ func _ready() -> void:
 	ws_client.pet_speech_received.connect(_on_pet_speech_received)
 	ws_client.pet_state_received.connect(_on_pet_state_received)
 
+	context_menu.id_pressed.connect(_on_menu_item_selected)
 	_setup_context_menu()
 
 	# Initial friendly greeting
-	speech_bubble.show_speech("麦麦桌宠已就绪！今天想吃点什么呢？🍟", 4.0)
+	speech_bubble.show_speech("薯条小宝已就绪！今天想去哪散步呢？🍟", 4.0)
 
 func _gui_input(event: InputEvent) -> void:
 	window_mgr.handle_input(event)
 
+func _on_drag_started() -> void:
+	# 用户开始拖动窗口时，平稳打断当前自主行走
+	pet.interrupt_walk()
+
 func _setup_context_menu() -> void:
 	context_menu.clear()
+	context_menu.add_item("🚶 散步走走", 10)
+	context_menu.add_item("🔄 转身翻转", 11)
+	context_menu.add_item("⏸️ 停下休息", 12)
+	context_menu.add_separator()
+	
+	# 全屏穿透开关选项
+	var fs_enabled = window_mgr.is_fullscreen_overlay_enabled()
+	var check_symbol = "✓ " if fs_enabled else "    "
+	context_menu.add_item(check_symbol + "在全屏应用中显示桌宠", 13)
+	
+	context_menu.add_separator()
 	context_menu.add_item("🍔 喂食汉堡", 0)
 	context_menu.add_item("🥤 喝冰可乐", 1)
 	context_menu.add_item("🎉 麦麦庆祝", 2)
@@ -37,10 +65,25 @@ func _setup_context_menu() -> void:
 	context_menu.add_separator()
 	context_menu.add_item("❌ 退出桌宠", 5)
 
-	context_menu.id_pressed.connect(_on_menu_item_selected)
-
 func _on_menu_item_selected(id: int) -> void:
 	match id:
+		10:
+			pet.start_random_walk()
+			speech_bubble.show_speech("迈开小短腿，出发去散步咯~🚶", 2.5)
+		11:
+			var new_dir = -pet.facing_direction
+			pet.paper_flip(new_dir)
+			speech_bubble.show_speech("唰！纸片小翻身~✨", 2.0)
+		12:
+			pet.stop_walk()
+			speech_bubble.show_speech("原地立正休息一下~🍟", 2.0)
+		13:
+			var new_state = not window_mgr.is_fullscreen_overlay_enabled()
+			window_mgr.set_show_over_fullscreen(new_state)
+			if new_state:
+				speech_bubble.show_speech("已开启全屏穿透！全屏应用下也能看到我啦~🍟✨", 3.5)
+			else:
+				speech_bubble.show_speech("已关闭全屏穿透，恢复普通窗口模式~", 2.5)
 		0:
 			pet.play_action_by_name("eat_burger", 3.5)
 			speech_bubble.show_speech("麦辣鸡腿堡大口嚼！真香~🍔", 3.0)
@@ -59,13 +102,19 @@ func _on_menu_item_selected(id: int) -> void:
 			get_tree().quit()
 
 func _on_open_context_menu(screen_pos: Vector2i) -> void:
+	var idx = context_menu.get_item_index(13)
+	if idx != -1:
+		var fs_enabled = window_mgr.is_fullscreen_overlay_enabled()
+		var check_symbol = "✓ " if fs_enabled else "    "
+		context_menu.set_item_text(idx, check_symbol + "在全屏应用中显示桌宠")
 	context_menu.position = screen_pos
 	context_menu.popup()
 
 func _on_pet_clicked() -> void:
 	ws_client.notify_pet_clicked()
-	pet.play_action_by_name("celebrate", 2.0)
-	speech_bubble.show_speech("主人摸摸头，今天也要开心鸭！✨", 3.0)
+	pet.play_click_bounce()
+	var quote = random_quotes[randi() % random_quotes.size()]
+	speech_bubble.show_speech(quote, 3.0)
 
 func _on_ws_connected() -> void:
 	speech_bubble.show_speech("已连接麦当劳中枢服务~🟢", 2.5)
