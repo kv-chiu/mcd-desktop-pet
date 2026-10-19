@@ -73,6 +73,18 @@ func notify_pet_clicked() -> void:
 	}
 	send_dict(msg)
 
+func notify_lunch_time_changed(new_time: String, enabled: bool, advance_min: int = 10) -> void:
+	var msg = {
+		"type": "set_lunch_time",
+		"timestamp": Time.get_datetime_string_from_system(),
+		"payload": {
+			"time": new_time,
+			"enabled": enabled,
+			"advanceMinutes": advance_min
+		}
+	}
+	send_dict(msg)
+
 func _handle_message(raw_json: String) -> void:
 	var json = JSON.new()
 	var err = json.parse(raw_json)

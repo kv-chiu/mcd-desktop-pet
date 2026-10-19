@@ -167,6 +167,24 @@ export class WebSocketHub {
           break;
         }
 
+        case 'set_lunch_time': {
+          if (msg.payload) {
+            const updates: any = {};
+            if (typeof msg.payload.time === 'string') updates.lunchTime = msg.payload.time;
+            if (typeof msg.payload.enabled === 'boolean') updates.lunchReminderEnabled = msg.payload.enabled;
+            if (typeof msg.payload.advanceMinutes === 'number' && msg.payload.advanceMinutes > 0) {
+              updates.lunchAdvanceMinutes = Math.round(msg.payload.advanceMinutes);
+            }
+            storage.saveConfig(updates);
+            console.log(
+              `[WebSocketHub] 午休时间配置已更新: ${updates.lunchTime || '未变'}, 提前: ${
+                updates.lunchAdvanceMinutes ? updates.lunchAdvanceMinutes + '分钟' : '未变'
+              }, 开启: ${updates.lunchReminderEnabled}`
+            );
+          }
+          break;
+        }
+
         case 'ping':
           if (client) {
             this.sendToClient(client, {

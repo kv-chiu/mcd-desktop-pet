@@ -118,7 +118,7 @@ const isTest = process.env.NODE_ENV === 'test' || process.argv.some((arg) => arg
 
 if (!isTest) {
   const config = storage.getConfig();
-  const port = config.port || 3001;
+  const port = Number(process.env.PORT) || config.port || 3001;
 
   const server = serve(
     {

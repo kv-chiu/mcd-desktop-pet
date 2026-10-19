@@ -40,6 +40,15 @@ configRoutes.post('/', async (c) => {
   if (typeof body.autoStart === 'boolean') {
     updateData.autoStart = body.autoStart;
   }
+  if (typeof body.lunchTime === 'string' && body.lunchTime.trim()) {
+    updateData.lunchTime = body.lunchTime.trim();
+  }
+  if (typeof body.lunchReminderEnabled === 'boolean') {
+    updateData.lunchReminderEnabled = body.lunchReminderEnabled;
+  }
+  if (typeof body.lunchAdvanceMinutes === 'number' && body.lunchAdvanceMinutes > 0) {
+    updateData.lunchAdvanceMinutes = Math.round(body.lunchAdvanceMinutes);
+  }
 
   try {
     const updated = storage.saveConfig(updateData);

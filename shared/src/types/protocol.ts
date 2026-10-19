@@ -6,6 +6,7 @@ export type WsMessageType =
   | 'pet_speech'
   | 'pet_state_update'
   | 'pet_click'
+  | 'set_lunch_time'
   | 'system_notice'
   | 'ping'
   | 'pong';

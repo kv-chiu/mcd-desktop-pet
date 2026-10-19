@@ -137,6 +137,22 @@ def get_server_port() -> int:
             pass
     return DEFAULT_PORT
 
+def get_lunch_config() -> tuple:
+    """获取当前配置的午休时间与提前提醒分钟"""
+    time_str = "12:00"
+    advance_min = 10
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+                if isinstance(cfg.get("lunchTime"), str) and cfg["lunchTime"]:
+                    time_str = cfg["lunchTime"]
+                if isinstance(cfg.get("lunchAdvanceMinutes"), int) and cfg["lunchAdvanceMinutes"] > 0:
+                    advance_min = cfg["lunchAdvanceMinutes"]
+        except Exception:
+            pass
+    return time_str, advance_min
+
 def check_server_status(port: int) -> bool:
     """检查中枢服务是否已正常启动并响应"""
     url = f"http://127.0.0.1:{port}/api/health"
@@ -305,6 +321,10 @@ def main():
             print(colored("   方式 3: 加上自动启动参数 python3 scripts/mock-lunch-scenario.py --auto-start", Colors.CYAN))
             print(colored("\n（此时若 Godot 桌宠客户端已启动，会实时看到小宝弹出气泡并做出对应动作）\n", Colors.DIM))
             sys.exit(1)
+
+    current_lunch_time, current_advance_min = get_lunch_config()
+    SCENARIO_STEPS[0]["title"] = f"⏰ 步骤 1: 离午休还有 {current_advance_min} 分钟提醒"
+    SCENARIO_STEPS[0]["speech"] = f"主人，还有 {current_advance_min} 分钟就要午休（{current_lunch_time}）啦！忙碌了一上午辛苦啦，该想想中午吃什么咯~🍟"
 
     steps_to_run = SCENARIO_STEPS
     if args.phase:

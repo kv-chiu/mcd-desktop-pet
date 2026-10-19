@@ -9,6 +9,9 @@ export interface AppConfig {
   petName: string;
   soundEnabled: boolean;
   autoStart: boolean;
+  lunchTime: string;
+  lunchReminderEnabled: boolean;
+  lunchAdvanceMinutes: number;
 }
 
 import type { PetMood, PetActionType, PetState, ActionHistoryRecord } from '@mcd/shared';
@@ -21,6 +24,9 @@ const DEFAULT_CONFIG: AppConfig = {
   petName: '麦麦宝',
   soundEnabled: true,
   autoStart: false,
+  lunchTime: '12:00',
+  lunchReminderEnabled: true,
+  lunchAdvanceMinutes: 10,
 };
 
 const DEFAULT_PET_STATE: PetState = {
