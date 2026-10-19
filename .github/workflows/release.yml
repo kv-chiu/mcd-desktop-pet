@@ -98,8 +98,25 @@ jobs:
           include-templates: true
           use-dotnet: false
 
+      - name: 解析 Godot 执行文件路径
+        shell: python
+        run: |
+          import os
+          from pathlib import Path
+          godot = Path(os.environ["GODOT4"]).resolve(strict=True)
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as output:
+              output.write(f"GODOT_BIN={godot}\n")
+          print(f"Godot executable: {godot}")
+
       - name: 执行一键打包发布脚本 (build-release.py)
         run: python scripts/build-release.py --platform ${{ matrix.platform }}
+
+      - name: 校验服务与 CLI 产物语法
+        shell: bash
+        run: |
+          set -e
+          node --check dist/bundle/server.bundle.mjs
+          node --check dist/bundle/cli.bundle.mjs
 
       - name: 上传构建发布产物
         uses: actions/upload-artifact@v4
