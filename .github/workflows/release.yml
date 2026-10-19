@@ -14,6 +14,9 @@ on:
 permissions:
   contents: write
 
+env:
+  PYTHONUTF8: '1'
+
 jobs:
   test:
     name: 自动化测试 (Tests & Validation)
@@ -89,7 +92,7 @@ jobs:
         uses: chickensoft-games/setup-godot@v2
         with:
           version: 4.3.0
-          export-templates: true
+          include-templates: true
           use-dotnet: false
 
       - name: 执行一键打包发布脚本 (build-release.py)
