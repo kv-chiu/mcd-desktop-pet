@@ -87,6 +87,8 @@ func _run() -> void:
 	_check(is_equal_approx(pet.anim_sprite.position.y - pet.anim_sprite.scale.y * pet.ACTION_Y_OFFSET, ending_y), "Return changed the current pose position")
 	await create_timer(0.25).timeout
 	_check(pet.current_state == DesktopPet.State.IDLE, "Left-facing action did not settle to idle")
+	_check(pet.facing_direction == -1, "Pet did not retain left facing direction")
+	_check(pet.anim_sprite.scale.x < 0, "Sprite scale did not retain left facing mirror")
 	_check(completions.count("wave") == 2, "Left-facing wave should complete exactly once")
 
 	pet.play_jump()

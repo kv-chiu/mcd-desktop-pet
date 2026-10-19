@@ -122,16 +122,11 @@ func play_idle(keep_breath: bool = false) -> void:
 		anim_sprite.position.y = base_pos_y
 		anim_sprite.play("idle")
 		
-		# 如果朝向依然是朝左，在进入待机正面时优雅翻回正向 (1)
-		if facing_direction != 1 and not is_flipping:
-			paper_flip(1)
-		else:
-			anim_sprite.scale = Vector2(1.0, 1.0)
+		if not is_flipping:
+			anim_sprite.scale = Vector2(float(facing_direction), 1.0)
 	else:
 		if anim_sprite.animation != &"idle":
 			anim_sprite.play("idle")
-		if facing_direction != 1 and not is_flipping:
-			paper_flip(1)
 		next_walk_delay = idle_time + randf_range(3.0, 6.0)
 
 func _update_breathing(delta: float) -> void:
@@ -364,12 +359,13 @@ func _begin_idle_return() -> void:
 	anim_sprite.scale = return_scale
 	anim_sprite.position.y = return_y
 	anim_sprite.play(action_name + "_return")
-	if not return_scale.is_equal_approx(Vector2.ONE) or not is_equal_approx(return_y, base_pos_y):
+	var target_scale := Vector2(float(facing_direction), 1.0)
+	if not return_scale.is_equal_approx(target_scale) or not is_equal_approx(return_y, base_pos_y):
 		var frames := anim_sprite.sprite_frames
 		var duration := float(frames.get_frame_count(anim_sprite.animation)) / frames.get_animation_speed(anim_sprite.animation)
 		action_tween = create_tween().set_parallel(true)
 		action_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		action_tween.tween_property(anim_sprite, "scale", Vector2.ONE, duration)
+		action_tween.tween_property(anim_sprite, "scale", target_scale, duration)
 		action_tween.tween_property(anim_sprite, "position:y", base_pos_y, duration)
 
 func _stop_action_tween() -> void:
@@ -398,10 +394,7 @@ func play_action_by_name(act_name: String, duration: float = 3.0) -> void:
 	current_speed = 0.0
 	current_state = State.ACTION
 	
-	# 切回正视图作为动作底座
-	if facing_direction != 1 and not is_flipping:
-		paper_flip(1)
-		
+
 	if anim_sprite.sprite_frames != null and anim_sprite.sprite_frames.has_animation(act_name):
 		anim_sprite.stop()
 		anim_sprite.play(act_name)
