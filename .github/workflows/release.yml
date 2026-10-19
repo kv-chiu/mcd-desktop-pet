@@ -46,6 +46,9 @@ jobs:
       - name: 运行全量单元与集成测试
         run: pnpm test
 
+      - name: 验证跨平台打包逻辑
+        run: python -m unittest discover -s scripts -p 'test_*.py'
+
   build-matrix:
     name: 构建跨平台产物 (${{ matrix.platform }})
     needs: test

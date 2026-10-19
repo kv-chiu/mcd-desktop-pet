@@ -48,6 +48,9 @@ def log_error(msg):
 
 def run_cmd(cmd, cwd=PROJECT_ROOT, check=True, env=None):
     """运行外部命令并实时输出"""
+    if isinstance(cmd, list):
+        # Windows 的 pnpm / npx 通常是 .cmd，CreateProcess 不会自动补全扩展名。
+        cmd = [shutil.which(cmd[0]) or cmd[0], *cmd[1:]]
     log(f"执行命令: {' '.join(cmd) if isinstance(cmd, list) else cmd} (cwd: {os.path.relpath(cwd, PROJECT_ROOT)})")
     merged_env = os.environ.copy()
     if env:
@@ -180,6 +183,11 @@ def export_godot(target_platform, godot_bin):
                 shutil.rmtree(app_dir)
             with zipfile.ZipFile(out_zip, 'r') as zf:
                 zf.extractall(os.path.dirname(out_zip))
+                # zipfile.extractall 不恢复 Unix 权限，必须保留 .app 的可执行位。
+                for info in zf.infolist():
+                    mode = (info.external_attr >> 16) & 0o777
+                    if mode:
+                        os.chmod(os.path.join(os.path.dirname(out_zip), info.filename), mode)
             return os.path.exists(app_dir)
         return False
 
