@@ -290,21 +290,23 @@ def main():
 """
     )
     parser.add_argument("-p", "--port", type=int, help="中枢服务端口 (默认读取本地配置或 3001)")
+    parser.add_argument("-w", "--wait", type=float, default=5.0, help="启动前倒计时等待秒数 (默认 5.0 秒，设为 0 可直接启动)")
     parser.add_argument("-d", "--delay", type=float, default=4.0, help="步骤之间自动等待秒数 (默认 4.0)")
     parser.add_argument("-s", "--step", action="store_true", help="交互式单步执行模式 (按回车进入下一步)")
     parser.add_argument("--phase", type=int, choices=range(1, 7), help="仅执行指定的阶段编号 (1 到 6)")
-    parser.add_argument("--fast", action="store_true", help="极速测试模式 (0.3s 间隔，用于自动化测试)")
+    parser.add_argument("--fast", action="store_true", help="极速测试模式 (0.3s 间隔且跳过等待，用于自动化测试)")
     parser.add_argument("--auto-start", action="store_true", help="如果服务未启动，自动尝试后台启动")
     parser.add_argument("--json", action="store_true", help="以 JSON 格式输出每步结果")
 
     args = parser.parse_args()
     port = args.port or get_server_port()
     delay = 0.3 if args.fast else args.delay
+    init_wait = 0.0 if (args.fast or args.step) else args.wait
 
     if not args.json:
         print(colored("==================================================", Colors.HEADER + Colors.BOLD))
         print(colored("🍔 麦当劳桌宠 - 午餐全流程模拟演练脚本", Colors.HEADER + Colors.BOLD))
-        print(colored(f"目标中枢端口: {port}  |  模式: {'单步回车' if args.step else f'自动间隔 {delay}s'}", Colors.DIM))
+        print(colored(f"目标端口: {port}  |  启动等待: {init_wait}s  |  模式: {'单步回车' if args.step else f'自动间隔 {delay}s'}", Colors.DIM))
         print(colored("==================================================", Colors.HEADER + Colors.BOLD))
 
     # 检查中枢服务是否在线
@@ -325,6 +327,21 @@ def main():
     current_lunch_time, current_advance_min = get_lunch_config()
     SCENARIO_STEPS[0]["title"] = f"⏰ 步骤 1: 离午休还有 {current_advance_min} 分钟提醒"
     SCENARIO_STEPS[0]["speech"] = f"主人，还有 {current_advance_min} 分钟就要午休（{current_lunch_time}）啦！忙碌了一上午辛苦啦，该想想中午吃什么咯~🍟"
+
+    # 启动前等待缓冲（方便用户切换视线观察桌宠）
+    if init_wait > 0 and not args.json:
+        wait_int = int(init_wait) if init_wait.is_integer() else init_wait
+        print(colored(f"\n⏳ 脚本将在 {wait_int} 秒后正式启动（留出时间方便您切换视角观察桌宠）...", Colors.YELLOW))
+        remaining = init_wait
+        while remaining > 0:
+            step_sleep = min(1.0, remaining)
+            sys.stdout.write(colored(f"\r倒计时: {int(remaining)} 秒...", Colors.CYAN))
+            sys.stdout.flush()
+            time.sleep(step_sleep)
+            remaining -= step_sleep
+        sys.stdout.write("\r" + " " * 35 + "\r")
+        sys.stdout.flush()
+        print(colored("🚀 演练正式开始！请留意屏幕上的桌宠动作与气泡：", Colors.BOLD + Colors.GREEN))
 
     steps_to_run = SCENARIO_STEPS
     if args.phase:
