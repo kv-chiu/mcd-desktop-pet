@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: 配置 Node.js
         uses: actions/setup-node@v4
@@ -35,8 +37,8 @@ jobs:
       - name: 安装项目依赖
         run: pnpm install --frozen-lockfile
 
-      - name: 构建测试依赖的共享包
-        run: pnpm --filter @mcd/shared build
+      - name: 构建测试依赖的项目产物
+        run: pnpm build
 
       - name: 运行全量单元与集成测试
         run: pnpm test
@@ -62,6 +64,8 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: 配置 Python
         uses: actions/setup-python@v5
@@ -105,6 +109,8 @@ jobs:
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
 
       - name: 下载各平台打包产物
         uses: actions/download-artifact@v4
