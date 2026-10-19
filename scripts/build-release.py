@@ -158,7 +158,7 @@ def export_godot(target_platform, godot_bin):
     os.makedirs(dist_desktop, exist_ok=True)
 
     if not godot_bin:
-        log_warn("未检测到 Godot 4 引擎，跳过桌宠本地导出步骤（在 CI 矩阵构建中将自动执行导出）")
+        log_warn("未检测到 Godot 4 引擎，无法导出桌宠客户端；仅打包服务时可显式使用 --skip-godot")
         return False
 
     log(f"使用 Godot 导出 [{target_platform}] 桌面宠物客户端...")
@@ -586,7 +586,9 @@ def main():
     godot_bin = find_godot_executable()
     if not args.skip_godot:
         for p in target_platforms:
-            export_godot(p, godot_bin)
+            if not export_godot(p, godot_bin):
+                log_error(f"[{p}] Godot 导出失败，停止发布，避免生成缺少桌宠客户端的安装包")
+                sys.exit(1)
 
     # 4. 组装发布包
     log("【阶段 4/5】组装多端开箱即用发布分发目录...")

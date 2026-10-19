@@ -149,7 +149,7 @@ export class McpGatewayClient {
         },
         clientInfo: {
           name: 'mcd-desktop-pet-gateway',
-          version: '1.0.0',
+          version: '0.1.0',
         },
       },
       overrideToken

@@ -39,7 +39,7 @@ const program = new Command();
 program
   .name('mcd')
   .description('🍔 麦当劳桌宠命令行工具 (McDonald\'s Desktop Pet CLI) - 桌面宠物与 MCP 工具统一控制中枢')
-  .version('1.0.0');
+  .version('0.1.0');
 
 // ===================== 顶层服务启停快捷指令 =====================
 

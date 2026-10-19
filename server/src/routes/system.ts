@@ -28,7 +28,7 @@ systemRoutes.get('/health', (c) => {
 systemRoutes.get('/version', (c) => {
   return c.json({
     name: 'mcd-pet-server',
-    version: '1.0.0',
+    version: '0.1.0',
     description: '麦当劳桌宠核心中枢服务 (Hono)',
     protocolVersion: '2024-11-05',
   });

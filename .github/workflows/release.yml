@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: '发布版本号 Tag (例如: v1.0.0)'
+        description: '发布版本号 Tag (例如: v0.1.0)'
         required: false
-        default: 'v1.0.0'
+        default: 'v0.1.0'
 
 permissions:
   contents: write
@@ -34,6 +34,9 @@ jobs:
 
       - name: 安装项目依赖
         run: pnpm install --frozen-lockfile
+
+      - name: 构建测试依赖的共享包
+        run: pnpm --filter @mcd/shared build
 
       - name: 运行全量单元与集成测试
         run: pnpm test
@@ -117,7 +120,7 @@ jobs:
           cd final_release
           sha256sum * > checksums.sha256
           cat checksums.sha256
-          echo "tag_name=${{ github.ref_name || github.event.inputs.tag || 'v1.0.0' }}" >> $GITHUB_OUTPUT
+          echo "tag_name=${{ github.event.inputs.tag || github.ref_name }}" >> $GITHUB_OUTPUT
 
       - name: 生成发布版本与说明文档
         uses: softprops/action-gh-release@v2
@@ -133,7 +136,7 @@ jobs:
           body: |
             # 🍔 麦当劳智能桌面宠物 (McDonald's Desktop Pet) ${{ steps.prepare_assets.outputs.tag_name }}
 
-            感谢使用麦当劳智能桌面宠物！本版本提供免环境依赖的开箱即用支持，以及面向大模型 Agent 的统一技能扩展。
+            感谢使用麦当劳智能桌面宠物！本版本提供跨平台桌宠、中枢服务、Web 控制台与 Agent 技能扩展。启动中枢与 CLI 需要先安装 Node.js 22，已打包的桌宠无需安装 Godot。
 
             ---
 

@@ -1,7 +1,7 @@
 {
   "name": "mcd-desktop-pet",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.1.0",
   "packageManager": "pnpm@12.10.1",
   "scripts": {
     "build": "pnpm -r build",
