@@ -39,6 +39,7 @@ const ACTION_SCALE = Vector2(1.025, 1.07)
 const ACTION_Y_OFFSET: float = 7.5
 const IDLE_RETURN_FRAMES = preload("res://assets/sprites/shubao-idle-return/idle_returns.tres")
 var action_tween: Tween
+var click_tween: Tween
 
 # 阴影尺寸与中心配置（可在属性面板或脚本直接调整）
 @export_group("地面阴影设置")
@@ -109,27 +110,35 @@ func _process(delta: float) -> void:
 
 # ==================== IDLE 状态 ====================
 
-func play_idle() -> void:
+func play_idle(keep_breath: bool = false) -> void:
 	_stop_action_tween()
 	current_state = State.IDLE
 	current_speed = 0.0
-	current_breath_y = 0.0
-	idle_time = 0.0
 	action_name = "idle"
-	anim_sprite.position.y = base_pos_y
-	anim_sprite.play("idle")
 	
-	# 如果朝向依然是朝左，在进入待机正面时优雅翻回正向 (1)
-	if facing_direction != 1 and not is_flipping:
-		paper_flip(1)
+	if not keep_breath:
+		current_breath_y = 0.0
+		idle_time = 0.0
+		anim_sprite.position.y = base_pos_y
+		anim_sprite.play("idle")
+		
+		# 如果朝向依然是朝左，在进入待机正面时优雅翻回正向 (1)
+		if facing_direction != 1 and not is_flipping:
+			paper_flip(1)
+		else:
+			anim_sprite.scale = Vector2(1.0, 1.0)
 	else:
-		anim_sprite.scale = Vector2(1.0, 1.0)
+		if anim_sprite.animation != &"idle":
+			anim_sprite.play("idle")
+		if facing_direction != 1 and not is_flipping:
+			paper_flip(1)
+		next_walk_delay = idle_time + randf_range(3.0, 6.0)
 
-func _process_idle(delta: float) -> void:
+func _update_breathing(delta: float) -> void:
 	idle_time += delta
 	
 	# 自然微呼吸律动（保持脚底稳贴地面，身体舒展与影子呼吸严格同步）
-	if not is_flipping:
+	if not is_flipping and (click_tween == null or not click_tween.is_running()):
 		var breath = sin(idle_time * 2.5) * 0.016
 		current_breath_y = breath
 		anim_sprite.scale.y = 1.0 + breath
@@ -138,6 +147,9 @@ func _process_idle(delta: float) -> void:
 		anim_sprite.position.y = base_pos_y - (112.0 * breath)
 	else:
 		current_breath_y = 0.0
+
+func _process_idle(delta: float) -> void:
+	_update_breathing(delta)
 	
 	# 自动随机漫步计时
 	if auto_walk_enabled and not is_flipping:
@@ -364,6 +376,9 @@ func _stop_action_tween() -> void:
 	if action_tween != null:
 		action_tween.kill()
 		action_tween = null
+	if click_tween != null and click_tween.is_valid():
+		click_tween.kill()
+		click_tween = null
 
 # ==================== 其它动作/互动 ====================
 
@@ -403,6 +418,7 @@ func play_action_by_name(act_name: String, duration: float = 3.0) -> void:
 		anim_sprite.scale = Vector2(float(facing_direction), 1.0)
 		anim_sprite.position.y = base_pos_y
 		anim_sprite.play("idle")
+		idle_time = 0.0
 		_trigger_action_bounce(act_name)
 
 func _trigger_jump_bounce(target_base_y: float = base_pos_y) -> void:
@@ -422,20 +438,34 @@ func _trigger_action_bounce(_act_name: String) -> void:
 	var tween := action_tween
 	tween.tween_property(anim_sprite, "position:y", base_pos_y - 12.0, 0.12)
 	tween.tween_property(anim_sprite, "position:y", base_pos_y, 0.12)
+	tween.finished.connect(func():
+		if action_tween == tween:
+			action_tween = null
+	)
 
 func _process_action(delta: float) -> void:
 	# 动作与补帧都以播放完成为准，避免计时器截断收尾。
 	if anim_sprite.animation in [&"jump", &"wave", &"jump_return", &"wave_return"]:
 		return
+
+	# 常态贴图待机动作（如 speak 说话推荐或通用动作），在弹跳缓动结束后保持自然的微呼吸律动
+	if anim_sprite.animation == &"idle":
+		if action_tween == null or not action_tween.is_running():
+			_update_breathing(delta)
+
 	action_timer += delta
 	if action_timer >= action_duration:
 		var finished_name = action_name
-		play_idle()
+		var keep_breath := (anim_sprite.animation == &"idle" and not is_flipping)
+		play_idle(keep_breath)
 		action_finished.emit(finished_name)
 
 func play_click_bounce() -> void:
 	# 点击小宝时的快乐弹性反馈
-	var tween = create_tween().set_parallel(false)
+	if click_tween != null and click_tween.is_valid():
+		click_tween.kill()
+	click_tween = create_tween().set_parallel(false)
+	var tween := click_tween
 	tween.tween_property(anim_sprite, "scale", Vector2(float(facing_direction) * 1.15, 0.85), 0.09) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(anim_sprite, "scale", Vector2(float(facing_direction) * 0.92, 1.12), 0.12) \
@@ -445,6 +475,11 @@ func play_click_bounce() -> void:
 	tween.tween_property(anim_sprite, "position:y", base_pos_y, 0.12) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.tween_property(anim_sprite, "scale", Vector2(float(facing_direction) * 1.0, 1.0), 0.08)
+	tween.finished.connect(func():
+		if click_tween == tween:
+			click_tween = null
+			idle_time = 0.0
+	)
 
 func get_current_action_name() -> String:
 	match current_state:
@@ -503,8 +538,11 @@ func _update_shadow() -> void:
 	# 计算起跳/浮空高度（相对当前动作地面基准线，排除待机微呼吸的脚底贴地补偿）
 	var has_action_alignment := current_state == State.ACTION \
 		and anim_sprite.animation in [&"jump", &"wave"]
+	var is_idle_breathing := (current_state == State.IDLE) or (
+		current_state == State.ACTION and anim_sprite.animation == &"idle" and (action_tween == null or not action_tween.is_running())
+	)
 	var jump_height = 0.0
-	if current_state != State.IDLE:
+	if not is_idle_breathing:
 		var ground_y = base_pos_y
 		if has_action_alignment:
 			ground_y = base_pos_y - ACTION_Y_OFFSET

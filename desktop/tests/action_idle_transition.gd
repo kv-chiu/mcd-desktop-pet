@@ -98,5 +98,23 @@ func _run() -> void:
 	_check(pet.action_tween == null, "Interrupted jump still has a motion tween")
 	_check(absf(pet.anim_sprite.position.y - pet.base_pos_y) < 2.0, "Interrupted jump moved the idle sprite")
 
+	# 测试 speak 等常态待机动作在 State.ACTION 下的微呼吸保持与平滑过渡
+	pet.play_action_by_name("speak", 0.6)
+	_check(pet.current_state == DesktopPet.State.ACTION, "speak did not enter ACTION state")
+	_check(pet.anim_sprite.animation == &"idle", "speak did not fallback to idle animation")
+	await create_timer(0.35).timeout
+	_check(pet.idle_time > 0.05, "speak did not advance idle_time during speech action")
+	_check(pet.current_breath_y != 0.0, "speak did not perform subtle breathing during speech action")
+	await create_timer(0.35).timeout
+	_check(pet.current_state == DesktopPet.State.IDLE, "speak did not transition back to IDLE")
+	# 测试点击小宝弹性反馈 (play_click_bounce) 与微呼吸互不干扰
+	pet.play_click_bounce()
+	_check(pet.click_tween != null and pet.click_tween.is_running(), "click bounce tween did not start")
+	await create_timer(0.6).timeout
+	_check(pet.click_tween == null, "click bounce tween did not finish cleanly")
+	_check(pet.current_state == DesktopPet.State.IDLE, "click bounce broke IDLE state")
+
 	print("Action/idle transition checks: ", "PASS" if failures == 0 else "FAIL (%d)" % failures)
 	quit(0 if failures == 0 else 1)
+
+
