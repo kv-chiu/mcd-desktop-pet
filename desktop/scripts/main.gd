@@ -29,10 +29,20 @@ var custom_advance_dialog: ConfirmationDialog = null
 var custom_advance_edit: LineEdit = null
 const LUNCH_CONFIG_PATH = "user://lunch_settings.cfg"
 
+const BehaviorController = preload("res://scripts/behavior_controller.gd")
+var behavior_ctrl: BehaviorController
+
+
 func _ready() -> void:
 	# Inject window manager into pet
 	pet.window_manager = window_mgr
 	
+	# 初始化行为控制器并挂载
+	behavior_ctrl = BehaviorController.new()
+	behavior_ctrl.name = "BehaviorController"
+	add_child(behavior_ctrl)
+	behavior_ctrl.setup(pet, speech_bubble)
+
 	# Connect window manager input & drag events
 	window_mgr.pet_clicked.connect(_on_pet_clicked)
 	window_mgr.open_context_menu.connect(_on_open_context_menu)
@@ -52,8 +62,8 @@ func _ready() -> void:
 	context_menu.id_pressed.connect(_on_menu_item_selected)
 	_setup_context_menu()
 
-	# Initial friendly greeting
-	speech_bubble.show_speech("薯条小宝已就绪！今天想去哪散步呢？🍟", 4.0)
+	# Initial friendly greeting through behavior controller
+	behavior_ctrl.request_system_notice("薯条小宝已就绪！今天想去哪散步呢？🍟", 4.0)
 
 func _process(delta: float) -> void:
 	if not lunch_reminder_enabled:
@@ -261,11 +271,10 @@ func _set_lunch_time(new_time: String, enabled: bool) -> void:
 	ws_client.notify_lunch_time_changed(lunch_time, lunch_reminder_enabled, lunch_advance_minutes)
 
 	if enabled:
-		pet.play_jump()
 		var remind_time = _calculate_remind_time_str(lunch_time, lunch_advance_minutes)
-		speech_bubble.show_speech("午休时间已设为 " + lunch_time + "！\n每天 " + remind_time + " 提前 " + str(lunch_advance_minutes) + " 分钟提醒您点餐~🍟✨", 4.5)
+		behavior_ctrl.request_menu_action("jump", "午休时间已设为 " + lunch_time + "！\n每天 " + remind_time + " 提前 " + str(lunch_advance_minutes) + " 分钟提醒您点餐~🍟✨", 4.5)
 	else:
-		speech_bubble.show_speech("已关闭午休提醒功能~", 2.5)
+		behavior_ctrl.request_menu_action("idle", "已关闭午休提醒功能~", 2.5)
 
 func _set_lunch_advance_minutes(m: int) -> void:
 	lunch_advance_minutes = m
@@ -276,9 +285,8 @@ func _set_lunch_advance_minutes(m: int) -> void:
 	# 同步给中枢服务持久化
 	ws_client.notify_lunch_time_changed(lunch_time, lunch_reminder_enabled, lunch_advance_minutes)
 
-	pet.play_jump()
 	var remind_time = _calculate_remind_time_str(lunch_time, lunch_advance_minutes)
-	speech_bubble.show_speech("午休提醒已设为提前 %d 分钟！\n每天 %s 会准时提醒您选餐（午休 %s）~🍟✨" % [lunch_advance_minutes, remind_time, lunch_time], 4.5)
+	behavior_ctrl.request_menu_action("jump", "午休提醒已设为提前 %d 分钟！\n每天 %s 会准时提醒您选餐（午休 %s）~🍟✨" % [lunch_advance_minutes, remind_time, lunch_time], 4.5)
 
 func _calculate_remind_time_str(t: String, adv_min: int = lunch_advance_minutes) -> String:
 	var parts = t.split(":")
@@ -294,9 +302,9 @@ func _calculate_remind_time_str(t: String, adv_min: int = lunch_advance_minutes)
 	return "%02d:%02d" % [r_hour, r_min]
 
 func _trigger_lunch_reminder(is_test: bool = false) -> void:
-	pet.play_wave()
 	var tag = "【提醒测试】" if is_test else ""
-	speech_bubble.show_speech("%s主人，离午休(%s)还有 %d 分钟啦！忙碌了一上午辛苦啦，该想想中午吃什么咯~🍟" % [tag, lunch_time, lunch_advance_minutes], 5.0)
+	var speech_text = "%s主人，离午休(%s)还有 %d 分钟啦！忙碌了一上午辛苦啦，该想想中午吃什么咯~🍟" % [tag, lunch_time, lunch_advance_minutes]
+	behavior_ctrl.request_reminder(speech_text, "wave", 5.0)
 
 func _setup_custom_time_dialog() -> void:
 	custom_time_dialog = ConfirmationDialog.new()
@@ -339,7 +347,7 @@ func _on_custom_time_confirmed() -> void:
 		var formatted = "%02d:%02d" % [int(parts[0]), int(parts[1])]
 		_set_lunch_time(formatted, true)
 	else:
-		speech_bubble.show_speech("时间格式不对哦，请输入如 12:15 这样的 24 小时制时间~", 3.5)
+		behavior_ctrl.request_system_notice("时间格式不对哦，请输入如 12:15 这样的 24 小时制时间~", 3.5)
 
 func _setup_custom_advance_dialog() -> void:
 	custom_advance_dialog = ConfirmationDialog.new()
@@ -380,33 +388,28 @@ func _on_custom_advance_confirmed() -> void:
 		if val >= 1 and val <= 120:
 			_set_lunch_advance_minutes(val)
 			return
-	speech_bubble.show_speech("请输入 1 到 120 之间的有效分钟数哦~", 3.5)
+	behavior_ctrl.request_system_notice("请输入 1 到 120 之间的有效分钟数哦~", 3.5)
 
 func _on_menu_item_selected(id: int) -> void:
 	match id:
 		10:
-			pet.start_random_walk()
-			speech_bubble.show_speech("迈开小短腿，出发去散步咯~ 🚶", 2.5)
+			behavior_ctrl.request_menu_action("walk", "迈开小短腿，出发去散步咯~ 🚶", 2.5)
 		11:
 			var new_dir = -pet.facing_direction
-			pet.paper_flip(new_dir)
-			speech_bubble.show_speech("唰！纸片小翻身~✨", 2.0)
+			behavior_ctrl.request_menu_action("flip", "唰！纸片小翻身~✨", 2.0, new_dir)
 		12:
-			pet.stop_walk()
-			speech_bubble.show_speech("原地立正休息一下~🍟", 2.0)
+			behavior_ctrl.request_menu_action("stop_walk", "原地立正休息一下~🍟", 2.0)
 		14:
-			pet.play_jump()
-			speech_bubble.show_speech("好耶！起飞跳跃~✨", 2.0)
+			behavior_ctrl.request_menu_action("jump", "好耶！起飞跳跃~✨", 2.0)
 		15:
-			pet.play_wave()
-			speech_bubble.show_speech("嗨嗨！挥挥小手打招呼~🍟", 2.0)
+			behavior_ctrl.request_menu_action("wave", "嗨嗨！挥挥小手打招呼~🍟", 2.0)
 		13:
 			var new_state = not window_mgr.is_fullscreen_overlay_enabled()
 			window_mgr.set_show_over_fullscreen(new_state)
 			if new_state:
-				speech_bubble.show_speech("已开启全屏穿透！全屏应用下也能看到我啦~🍟✨", 3.5)
+				behavior_ctrl.request_menu_action("idle", "已开启全屏穿透！全屏应用下也能看到我啦~🍟✨", 3.5)
 			else:
-				speech_bubble.show_speech("已关闭全屏穿透，恢复普通窗口模式~", 2.5)
+				behavior_ctrl.request_menu_action("idle", "已关闭全屏穿透，恢复普通窗口模式~", 2.5)
 		4:
 			OS.shell_open("http://localhost:8080")
 		5:
@@ -426,24 +429,21 @@ func _on_open_context_menu(screen_pos: Vector2i) -> void:
 	context_menu.popup()
 
 func _on_pet_clicked() -> void:
-	ws_client.notify_pet_clicked()
-	pet.play_click_bounce()
 	var quote = random_quotes[randi() % random_quotes.size()]
-	speech_bubble.show_speech(quote, 3.0)
+	behavior_ctrl.request_user_click(quote)
+	ws_client.notify_pet_clicked()
 
 func _on_ws_connected() -> void:
-	speech_bubble.show_speech("已连接麦当劳中枢服务~🟢", 2.5)
+	behavior_ctrl.request_system_notice("已连接麦当劳中枢服务~🟢", 2.5)
 
 func _on_ws_disconnected() -> void:
-	speech_bubble.show_speech("中枢服务已断开，重连中...", 2.5)
+	behavior_ctrl.request_system_notice("中枢服务已断开，重连中...", 2.5, true)
 
 func _on_pet_action_received(action: String, duration: float, speech: String, _sound: String) -> void:
-	pet.play_action_by_name(action, duration)
-	if not speech.is_empty():
-		speech_bubble.show_speech(speech, duration)
+	behavior_ctrl.request_remote_action(action, duration, speech)
 
 func _on_pet_speech_received(text: String, duration: float) -> void:
-	speech_bubble.show_speech(text, duration)
+	behavior_ctrl.request_remote_speech(text, duration)
 
 func _on_pet_state_received(_state: Dictionary) -> void:
 	pass
