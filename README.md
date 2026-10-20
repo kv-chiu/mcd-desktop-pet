@@ -1,5 +1,7 @@
 # mcd-desktop-pet
 
+[简体中文](README.md) | [English](README.en.md)
+
 ![麦当劳桌面宠物](assets/cover.jpeg)
 
 一只生活在电脑桌面角落的麦当劳“薯条小宝”桌面宠物。
