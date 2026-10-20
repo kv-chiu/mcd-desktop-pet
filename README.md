@@ -76,7 +76,7 @@ Web 控制台的常规工具调用通过本地中枢连接麦当劳 MCP，真实
 
 先安装 **Node.js 22**（与项目 CI 使用的版本一致），并确认终端执行 `node --version` 能显示版本号。发布包中的中枢服务与 CLI 仍需 Node.js；运行已打包的桌宠无需安装 Godot 或 pnpm。
 
-从项目的 [Releases 页面](https://github.com/kv-chiu/mcd-mcp-webui/releases)下载对应系统的压缩包。若尚无对应版本的发布包，请使用下文的源码运行方式。
+从项目的 [Releases 页面](https://github.com/kv-chiu/mcd-desktop-pet/releases)下载对应系统的压缩包。若尚无对应版本的发布包，请使用下文的源码运行方式。
 
 #### Windows 系统
 
@@ -167,8 +167,8 @@ A: Web Token 保存在当前浏览器的 `localStorage`；通过 CLI 持久化�
 先克隆仓库并构建共享包与控制台：
 
 ```bash
-git clone https://github.com/kv-chiu/mcd-mcp-webui.git
-cd mcd-mcp-webui
+git clone https://github.com/kv-chiu/mcd-desktop-pet.git
+cd mcd-desktop-pet
 pnpm install
 pnpm --filter @mcd/shared build
 pnpm build:web
