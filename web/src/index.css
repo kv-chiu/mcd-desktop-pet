@@ -1,9 +1,6 @@
 @import '@radix-ui/themes/styles.css';
 
 :root {
-  /* ========================================================
-     1. Strict 3-Tier Font Sizes (L: 18px, M: 14px, S: 12px)
-     ======================================================== */
   --font-size-l: 18px;
   --font-size-m: 14px;
   --font-size-s: 12px;
@@ -12,14 +9,10 @@
   --line-height-m: 1.45;
   --line-height-s: 1.35;
 
-  /* Font Families */
   --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
     "PingFang SC", "Hiragino Sans GB", "Inter", "Microsoft YaHei", sans-serif;
   --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, Menlo, Monaco, monospace;
 
-  /* ========================================================
-     2. Apple-like Frosted Glass & Surface Design Tokens
-     ======================================================== */
   --bg-app: #09090b;
   --bg-surface: #121216;
   --bg-surface-elevated: #18181d;
@@ -34,7 +27,6 @@
   --text-secondary: #a1a1aa;
   --text-tertiary: #71717a;
 
-  /* McDonald's Elegant Gold (Amber 500/400) */
   --accent-gold: #f59e0b;
   --accent-gold-soft: rgba(245, 158, 11, 0.12);
   --accent-gold-border: rgba(245, 158, 11, 0.28);
@@ -70,7 +62,6 @@ body {
   min-height: 100vh;
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -86,9 +77,6 @@ body {
   background: rgba(255, 255, 255, 0.25);
 }
 
-/* ========================================================
-   Strict Font Size Utility Classes
-   ======================================================== */
 .font-l {
   font-size: var(--font-size-l);
   line-height: var(--line-height-l);
@@ -106,9 +94,6 @@ body {
   font-family: var(--font-mono);
 }
 
-/* ========================================================
-   Layout & Cards
-   ======================================================== */
 .app-container {
   max-width: 1280px;
   margin: 0 auto;
@@ -150,7 +135,6 @@ body {
   box-shadow: 0 0 0 1px var(--accent-gold-border);
 }
 
-/* Input & Select */
 .apple-input {
   width: 100%;
   font-family: var(--font-sans);
@@ -172,7 +156,6 @@ body {
   color: var(--text-tertiary);
 }
 
-/* Buttons */
 .apple-btn-primary {
   display: inline-flex;
   align-items: center;
@@ -220,7 +203,6 @@ body {
   border-color: var(--border-active);
 }
 
-/* Badges */
 .apple-badge {
   display: inline-flex;
   align-items: center;
@@ -248,7 +230,6 @@ body {
   border-color: rgba(248, 113, 113, 0.25);
 }
 
-/* Segmented Control */
 .segmented-control {
   display: inline-flex;
   padding: 3px;
@@ -283,7 +264,6 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-/* Code block */
 .apple-code-block {
   font-family: var(--font-mono);
   font-size: var(--font-size-s);
@@ -298,7 +278,6 @@ body {
   word-break: break-all;
 }
 
-/* Grid presets */
 .grid-tools {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));

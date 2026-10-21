@@ -57,7 +57,6 @@ func _setup_window() -> void:
 func _position_window_at_bottom_right() -> void:
 	var screen_rect = DisplayServer.screen_get_usable_rect()
 	var win_size = DisplayServer.window_get_size()
-	# Place at bottom-right corner with 40px margin
 	var target_x = screen_rect.position.x + screen_rect.size.x - win_size.x - 40
 	var target_y = screen_rect.position.y + screen_rect.size.y - win_size.y - 40
 	DisplayServer.window_set_position(Vector2i(target_x, target_y))
@@ -99,7 +98,6 @@ func move_window_x(delta_x: float) -> void:
 		var screen_rect = DisplayServer.screen_get_usable_rect()
 		var win_size = DisplayServer.window_get_size()
 		
-		# Clamp to screen usable area
 		var new_x = clamp(
 			current_pos.x + step,
 			screen_rect.position.x,

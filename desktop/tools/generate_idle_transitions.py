@@ -3,15 +3,7 @@
 # requires-python = ">=3.12"
 # dependencies = ["numpy==2.5.4", "opencv-python-headless==5.0.0.93", "pillow==13.0.0"]
 # ///
-"""Generate motion-compensated return-to-idle frames, without editing source art.
 
-Run: uv run desktop/tools/generate_idle_transitions.py [--preview-dir PATH]
-Only regeneration needs Python/OpenCV; Godot plays the checked-in PNGs normally.
-DIS estimates correspondence in both directions; inverse remapping moves both
-images to the same intermediate pose before interpolating premultiplied RGBA.
-https://docs.opencv.org/5.0/main_modules/classcv_1_1DISOpticalFlow.html
-https://docs.opencv.org/4.13.0/da/d54/group__imgproc__transform.html
-"""
 from __future__ import annotations
 
 import argparse
@@ -51,7 +43,6 @@ def grid_for(image: np.ndarray) -> np.ndarray:
 
 
 def align_action(pixels: np.ndarray, scale: tuple[float, float], offset_y: float) -> np.ndarray:
-    # Godot scales about the texture center, with pixel centers at x + 0.5.
     grid = grid_for(pixels)
     center = np.array([pixels.shape[1], pixels.shape[0]], dtype=np.float32) / 2
     mapping = (grid + 0.5 - center - [0, -offset_y]) / scale + center - 0.5
@@ -60,7 +51,6 @@ def align_action(pixels: np.ndarray, scale: tuple[float, float], offset_y: float
 
 
 def flow_gray(pixels: np.ndarray) -> np.ndarray:
-    # A white matte includes the silhouette in the correspondence estimate.
     matte = pixels[..., :3] + 1 - pixels[..., 3:]
     rgb = np.rint(np.clip(matte, 0, 1) * 255).astype(np.uint8)
     return cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
@@ -83,7 +73,6 @@ def estimate_flow(source: np.ndarray, target: np.ndarray) -> np.ndarray:
 
 
 def warp(pixels: np.ndarray, flow: np.ndarray, amount: float) -> np.ndarray:
-    # Solve p + amount * flow(p) = destination for the source coordinate p.
     grid = grid_for(pixels)
     mapping = grid.copy()
     for _ in range(12):
@@ -141,7 +130,6 @@ def write_resource(idle: Path) -> None:
             identifier = f"{name}_{index + 1:03}"
             identifiers.append(identifier)
             declarations.append(f'[ext_resource type="Texture2D" path="res://{path}" id="{identifier}"]')
-        # Reuse walk001 itself at the endpoint: no final resampling/sharpness jump.
         identifiers.append("idle")
         frames = ',\n'.join('{"duration": 1.0, "texture": ExtResource("' + identifier + '")}' for identifier in identifiers)
         animations.append('{\n"frames": [\n' + frames + '\n],\n"loop": false,\n"name": &"' + name + '_return",\n"speed": ' + str(FPS) + '\n}')

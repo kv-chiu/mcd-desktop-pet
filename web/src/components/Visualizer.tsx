@@ -43,7 +43,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Determine what structured viewer to render
   const renderStructuredContent = () => {
     if (!rawText && !result) {
       return (
@@ -54,7 +53,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       );
     }
 
-    // 1. Time / Clock
     if (toolName === 'now-time-info') {
       const timeData = parseTimeData(result, rawText);
       return (
@@ -86,7 +84,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       );
     }
 
-    // 2. Calendar
     if (toolName === 'campaign-calendar') {
       const calendarData = parseCalendarData(rawText);
       const days = Object.keys(calendarData);
@@ -170,7 +167,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       );
     }
 
-    // 3. Coupons
     if (toolName === 'query-my-coupons' || toolName === 'available-coupons' || toolName === 'query-store-coupons') {
       const myResult = parseMyCoupons(rawText);
       const availResult = parseAvailableCoupons(rawText);
@@ -260,7 +256,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       );
     }
 
-    // 4. Auto Bind Coupons Result
     if (toolName === 'auto-bind-coupons') {
       const isFailed = Boolean(
         result?.isError ||
@@ -350,7 +345,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       );
     }
 
-    // 5. Nutrition
     if (toolName === 'list-nutrition-foods') {
       const items = parseNutritionFoods(rawText);
       if (items.length === 0) {
@@ -426,7 +420,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       );
     }
 
-    // 6. Points Account
     if (toolName === 'query-my-account') {
       const points = parsePointsAccount(rawText);
       return (
@@ -482,7 +475,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       );
     }
 
-    // 7. Lottery Info
     if (toolName === 'query-lottery-info' || toolName === 'draw-lottery') {
       const lottery = parseLotteryInfo(rawText);
       return (
@@ -530,7 +522,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       );
     }
 
-    // 8. Order List
     if (toolName === 'order-list' || toolName === 'mall-order-list') {
       const orders = parseOrderList(rawText);
       if (orders.length === 0) {
@@ -588,7 +579,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
       );
     }
 
-    // Default: Formatted text block
     return (
       <div className="apple-code-block" style={{ whiteSpace: 'pre-wrap' }}>
         {rawText || jsonString}
@@ -598,7 +588,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
 
   return (
     <div className="frosted-card" style={{ padding: '20px', marginTop: '24px' }}>
-      {/* Header bar */}
       <div
         style={{
           display: 'flex',
@@ -631,7 +620,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
           )}
         </div>
 
-        {/* View mode toggle & Copy button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div className="segmented-control">
             <button
@@ -664,7 +652,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
         </div>
       </div>
 
-      {/* 4-Layer Execution Status Bar */}
       {layers && (
         <div
           style={{
@@ -718,7 +705,6 @@ export const Visualizer: React.FC<VisualizerProps> = ({
         </div>
       )}
 
-      {/* Body */}
       {viewMode === 'visual' ? renderStructuredContent() : <div className="apple-code-block">{jsonString}</div>}
     </div>
   );

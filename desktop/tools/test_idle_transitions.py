@@ -1,4 +1,3 @@
-"""Run with the same dependencies as generate_idle_transitions.py: python -m unittest discover -s desktop/tools."""
 import hashlib
 import json
 import unittest
@@ -20,7 +19,6 @@ class IdleTransitionsTest(unittest.TestCase):
         self.assertEqual(np.count_nonzero(midpoint[..., 3]), 64)
 
     def test_generated_frames_keep_two_separate_eyes(self):
-        # An unregistered dissolve produces duplicate dark features; verify the art.
         for name in ("jump", "wave"):
             for index in range(generator.STEPS):
                 path = generator.OUTPUT / name / f"return-{index + 1:03}.png"

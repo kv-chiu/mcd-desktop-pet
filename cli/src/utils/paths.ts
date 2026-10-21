@@ -37,7 +37,6 @@ export function readConfigPort(): number {
       }
     }
   } catch {
-    // ignore read/parse error, fallback to default
   }
   return 3001;
 }
@@ -55,14 +54,10 @@ export function findServerEntry(): ServerLocation | null {
     candidates.push(path.resolve(process.env.MCD_SERVER_DIR));
   }
 
-  // From cli/src/utils or cli/dist/utils -> root/server
   candidates.push(path.resolve(__dirname, '../../../server'));
-  // From cli/src or cli/dist -> root/server
   candidates.push(path.resolve(__dirname, '../../server'));
-  // Same directory as CLI (e.g. portable bundle dist)
   candidates.push(__dirname);
   candidates.push(path.resolve(__dirname, '../server'));
-  // From cwd
   candidates.push(path.resolve(process.cwd(), 'server'));
   candidates.push(path.resolve(process.cwd()));
 

@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-McDonald's Desktop Pet - AI Agent Bridge Controller
-麦当劳桌宠与 MCP 工具 Agent 统一控制中枢
 
-职责:
-1. 提供零依赖纯 Python 标准库交互，供 AI Agent、自动化脚本与终端直接控制桌宠与麦当劳工具
-2. 桌宠动作控制 (wave, jump, idle, speak, interact) 与气泡对话推送
-3. 麦当劳 33 项官方 MCP 工具标准化调用 (POST /api/tools/:name)
-4. 中枢服务生命周期辅助管理 (start, stop, status)
-5. 统一提供 --json 格式化响应，方便 LLM Agent 解析
-"""
 
 import sys
 import os
@@ -27,7 +17,6 @@ PID_FILE = os.path.expanduser("~/.mcd-desktop-pet/server.pid")
 
 
 def get_server_port():
-    """获取当前服务配置端口"""
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
@@ -40,7 +29,6 @@ def get_server_port():
 
 
 def http_request(path, method="GET", data=None, port=None, timeout=10.0):
-    """发送 HTTP 请求到本地桌宠中枢服务"""
     port = port or get_server_port()
     url = f"http://127.0.0.1:{port}{path}"
 
@@ -87,7 +75,6 @@ def http_request(path, method="GET", data=None, port=None, timeout=10.0):
         }
 
 
-# ===================== 桌宠动作与对话控制 =====================
 
 def cmd_pet_action(args, port):
     action = args.action
@@ -127,7 +114,6 @@ def cmd_status(args, port):
     }
 
 
-# ===================== MCP 工具调用 =====================
 
 def cmd_list_tools(args, port):
     res = http_request("/api/tools", method="GET", port=port)
@@ -147,18 +133,14 @@ def cmd_execute_tool(args, port):
     return res
 
 
-# ===================== 服务进程启停辅助 =====================
 
 def find_server_executable():
-    """查找本地可用的 server 执行入口"""
     script_dir = os.path.dirname(os.path.abspath(__file__))
     candidates = [
-        # 发布包路径
         os.path.join(script_dir, "../../server/server.bundle.mjs"),
         os.path.join(script_dir, "../server/server.bundle.mjs"),
         os.path.join(script_dir, "../../server/dist/index.js"),
         os.path.join(script_dir, "../dist/bundle/server.bundle.mjs"),
-        # 工程目录路径
         os.path.abspath(os.path.join(script_dir, "../../dist/bundle/server.bundle.mjs")),
         os.path.abspath(os.path.join(script_dir, "../../server/dist/index.js")),
         os.path.abspath(os.path.join(script_dir, "../../server/src/index.ts")),
@@ -174,12 +156,10 @@ def cmd_server_start(args, port):
     if not entry:
         return {"ok": False, "error": "未找到本地 server 执行文件，请确认在项目或发布包目录下"}
 
-    # 检查是否已在运行
     health = http_request("/api/health", method="GET", port=port, timeout=1.0)
     if health.get("ok"):
         return {"ok": True, "message": f"中枢服务已在运行中 (端口 {port})", "data": health.get("data")}
 
-    # 启动进程
     is_ts = entry.endswith(".ts")
     cmd = ["npx", "tsx", entry] if is_ts else ["node", entry]
     try:
@@ -191,7 +171,6 @@ def cmd_server_start(args, port):
             env=env,
             start_new_session=True
         )
-        # 等待服务就绪
         for _ in range(15):
             time.sleep(0.3)
             h = http_request("/api/health", method="GET", port=port, timeout=0.8)
@@ -225,7 +204,6 @@ def cmd_server_stop(args, port):
     return {"ok": True, "message": "服务未在运行或无 PID 文件记录"}
 
 
-# ===================== 主入口解析 =====================
 
 def main():
     parser = argparse.ArgumentParser(
@@ -236,32 +214,25 @@ def main():
 
     subparsers = parser.add_subparsers(dest="command", help="子指令")
 
-    # pet
     pet_parser = subparsers.add_parser("pet", help="控制桌宠动作与表现")
     pet_parser.add_argument("--action", choices=["idle", "wave", "jump", "speak"], default="wave", help="动作类型")
     pet_parser.add_argument("--duration", type=float, default=3.0, help="动作持续时间(秒)")
     pet_parser.add_argument("--speech", type=str, help="附加说话文本气泡")
 
-    # speak
     speak_parser = subparsers.add_parser("speak", help="推送对话气泡")
     speak_parser.add_argument("--text", required=True, help="说话文本内容")
     speak_parser.add_argument("--duration", type=float, default=4.0, help="气泡显示时间(秒)")
 
-    # interact
     subparsers.add_parser("interact", help="与桌宠互动(抚摸/提升好感度)")
 
-    # status
     subparsers.add_parser("status", help="查看中枢服务健康度与桌宠当前好感度/状态")
 
-    # tools
     subparsers.add_parser("tools", help="查询麦当劳 33 项官方工具目录")
 
-    # tool
     tool_parser = subparsers.add_parser("tool", help="执行指定的麦当劳 MCP 工具")
     tool_parser.add_argument("--name", required=True, help="MCP 工具 ID (例如: list-nutrition-foods, auto-bind-coupons)")
     tool_parser.add_argument("--params", default="{}", help="工具输入参数 JSON 字符串 (例如: '{\"keyword\":\"汉堡\"}')")
 
-    # server
     server_parser = subparsers.add_parser("server", help="中枢服务后台控制")
     server_sub = server_parser.add_subparsers(dest="server_action")
     server_sub.add_parser("start", help="启动中枢服务")
@@ -299,7 +270,6 @@ def main():
     else:
         result = {"ok": False, "error": f"未知命令: {args.command}"}
 
-    # 输出处理
     if args.json or not sys.stdout.isatty():
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:

@@ -1,4 +1,3 @@
-# 麦当劳桌宠与 Agent 技能安装与 PATH 自动配置脚本 (Windows PowerShell 版)
 param (
     [string]$Token = "",
     [switch]$Uninstall,
@@ -19,12 +18,10 @@ Write-Host "======================================================" -ForegroundC
 Write-Host "🍔 麦当劳桌宠 Agent 技能安装与环境配置 (Windows)" -ForegroundColor Cyan
 Write-Host "======================================================" -ForegroundColor Cyan
 
-# 1. 确保目录存在
 if (-not (Test-Path $BinDir)) {
     New-Item -ItemType Directory -Path $BinDir -Force | Out-Null
 }
 
-# 2. 查找并拷贝 cli.bundle.mjs
 $candidates = @(
     (Join-Path $ScriptDir "..\..\server\cli.bundle.mjs"),
     (Join-Path $ScriptDir "..\server\cli.bundle.mjs"),
@@ -45,7 +42,6 @@ if ($bundleSrc -and (Test-Path $bundleSrc)) {
     Copy-Item -Path $bundleSrc -Destination $destBundle -Force
 }
 
-# 3. 创建 mcd.cmd
 $cmdContent = @"
 @echo off
 set "DIR=%~dp0"
@@ -57,7 +53,6 @@ if exist "%DIR%cli.bundle.mjs" (
 "@
 Set-Content -Path (Join-Path $BinDir "mcd.cmd") -Value $cmdContent -Encoding ASCII
 
-# 4. 自动持久化加入 Windows User PATH
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 $normalizedBin = (Resolve-Path $BinDir).Path
 if (-not $userPath -or $userPath -notlike "*$normalizedBin*") {
@@ -68,7 +63,6 @@ if (-not $userPath -or $userPath -notlike "*$normalizedBin*") {
     Write-Host "✔ PATH 环境变量已就绪: $normalizedBin" -ForegroundColor Green
 }
 
-# 5. 配置 Token
 if ($Token) {
     $cfgBody = @{ token = $Token } | ConvertTo-Json -Compress
     try {

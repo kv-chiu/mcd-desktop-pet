@@ -18,7 +18,6 @@ export const App: React.FC = () => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isTesting, setIsTesting] = useState(false);
 
-  // Active selected tool for execution
   const [selectedTool, setSelectedTool] = useState<ToolMetadata>(
     OFFICIAL_TOOLS.find((t) => t.id === 'campaign-calendar') || OFFICIAL_TOOLS[0]
   );
@@ -31,7 +30,6 @@ export const App: React.FC = () => {
   const executorRef = useRef<HTMLDivElement>(null);
   const visualizerRef = useRef<HTMLDivElement>(null);
 
-  // Save token to localStorage whenever it changes
   const handleTokenChange = (newToken: string) => {
     setToken(newToken);
     localStorage.setItem('mcd_mcp_token', newToken);
@@ -42,7 +40,6 @@ export const App: React.FC = () => {
     }
   };
 
-  // Test connection
   const handleTestConnection = async () => {
     if (!token.trim()) return;
     setIsTesting(true);
@@ -63,7 +60,6 @@ export const App: React.FC = () => {
     }
   };
 
-  // Execute selected tool
   const handleExecute = async (toolName: string, args: Record<string, any>) => {
     if (!token.trim()) {
       setExecuteError('请先在顶部设置您的 MCP Token');
@@ -79,7 +75,6 @@ export const App: React.FC = () => {
       setStatus('connected');
       setSessionId(mcpClient.getSessionId());
 
-      // Smooth scroll to visualizer
       setTimeout(() => {
         visualizerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -103,7 +98,6 @@ export const App: React.FC = () => {
     }
   };
 
-  // Handle Quick Action click
   const handleQuickAction = (toolId: OfficialToolId, defaultArgs?: Record<string, any>) => {
     const targetTool = TOOL_MAP[toolId] || OFFICIAL_TOOLS.find((t) => t.id === toolId);
     if (targetTool) {
@@ -111,12 +105,10 @@ export const App: React.FC = () => {
       setInitialArgs(defaultArgs);
       setExecuteError(null);
 
-      // Scroll to executor
       executorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  // Handle Tool selection from 33-tool list
   const handleSelectTool = (tool: ToolMetadata) => {
     setSelectedTool(tool);
     setInitialArgs(undefined);
@@ -127,7 +119,6 @@ export const App: React.FC = () => {
   return (
     <Theme appearance="dark" accentColor="amber" grayColor="slate" radius="large">
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        {/* Navigation & Token Bar */}
         <Header
           token={token}
           onTokenChange={handleTokenChange}
@@ -137,12 +128,9 @@ export const App: React.FC = () => {
           isTesting={isTesting}
         />
 
-        {/* Main Content Area */}
         <main className="app-container" style={{ flex: 1, width: '100%' }}>
-          {/* 1. Quick Actions */}
           <QuickActions onSelectAction={handleQuickAction} activeToolId={selectedTool.id} />
 
-          {/* 2. Tool Execution Workspace */}
           <div ref={executorRef}>
             <ToolExecutor
               tool={selectedTool}
@@ -154,7 +142,6 @@ export const App: React.FC = () => {
             />
           </div>
 
-          {/* 3. Result Visualizer (when executed) */}
           {lastResult && (
             <div ref={visualizerRef}>
               <Visualizer
@@ -168,13 +155,11 @@ export const App: React.FC = () => {
             </div>
           )}
 
-          {/* 4. Complete 33 Tools Directory */}
           <div style={{ marginTop: '36px' }}>
             <ToolList selectedToolId={selectedTool.id} onSelectTool={handleSelectTool} />
           </div>
         </main>
 
-        {/* Footer */}
         <footer
           style={{
             borderTop: '1px solid var(--border-subtle)',

@@ -5,7 +5,7 @@
 
 #define FLAG_FILE_PATH "/tmp/mcd_show_over_fullscreen.flag"
 
-static int g_current_mode = -1; // -1: uninitialized, 0: regular, 1: fullscreen overlay
+static int g_current_mode = -1;
 static pthread_t g_monitor_thread;
 static volatile bool g_running = true;
 
@@ -14,12 +14,9 @@ static void apply_window_settings(int mode) {
         NSArray *windows = [NSApp windows];
 
         if (mode == 1) {
-            // Apple DTS thread 826308:
-            // 1. Activation policy = accessory (prevents stealing focus, enables overlay above fullscreen Spaces)
             [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
 
             for (NSWindow *window in windows) {
-                // Only target the main Godot window; do NOT touch PopupMenus or system input windows
                 if ([window.className containsString:@"GodotWindow"]) {
                     window.level = (NSWindowLevel)1000;
                     window.collectionBehavior = NSWindowCollectionBehaviorCanJoinAllSpaces |
@@ -27,7 +24,6 @@ static void apply_window_settings(int mode) {
                                                 NSWindowCollectionBehaviorStationary |
                                                 NSWindowCollectionBehaviorCanJoinAllApplications;
                     window.hidesOnDeactivate = NO;
-                    // Keep window visible smoothly, NEVER call orderOut (which causes flashing)
                     [window orderFrontRegardless];
                 }
             }
@@ -60,7 +56,7 @@ static void* monitor_thread_func(void* arg) {
             }
             fclose(f);
         }
-        usleep(300000); // 300ms poll interval without any enforce flickering
+        usleep(300000);
     }
     return NULL;
 }

@@ -9,18 +9,15 @@ import { mcpGateway } from '../src/mcp/client.js';
 import app from '../src/index.js';
 
 test('【Storage 持久化写入异常与一致性测试】', async (t) => {
-  // 创建独立的临时测试目录隔离真实用户环境
   const testDir = path.join(os.tmpdir(), `mcd_test_storage_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
   fs.mkdirSync(testDir, { recursive: true });
 
   const originalBaseDir = storage.getBaseDir();
   storage.setBaseDir(testDir);
 
-  // 初始化基础配置与状态
   storage.saveConfig({ petName: '初始麦麦宝', token: 'initial_token_123456' });
   storage.updatePetState({ favor: 50, experience: 0, currentAction: 'idle' });
 
-  // 监听并收集 WebSocket 广播消息（实际送出到底层的 broadcast）
   const emittedBroadcasts: Array<{ type: string; payload?: any }> = [];
 
   const originalBroadcast = wsHub.broadcast.bind(wsHub);
@@ -30,13 +27,11 @@ test('【Storage 持久化写入异常与一致性测试】', async (t) => {
   };
 
   t.after(() => {
-    // 恢复现场
     wsHub.broadcast = originalBroadcast;
     storage.setBaseDir(originalBaseDir);
     try {
       fs.rmSync(testDir, { recursive: true, force: true });
     } catch {
-      // ignore
     }
   });
 
@@ -44,7 +39,6 @@ test('【Storage 持久化写入异常与一致性测试】', async (t) => {
     const originalWriteFileSync = fs.writeFileSync;
     let writeFailed = false;
 
-    // 劫持 fs.writeFileSync 模拟磁盘异常
     fs.writeFileSync = ((filePath: any, data: any, options: any) => {
       if (typeof filePath === 'string' && filePath.includes('config.json')) {
         writeFailed = true;
@@ -54,7 +48,6 @@ test('【Storage 持久化写入异常与一致性测试】', async (t) => {
     }) as any;
 
     try {
-      // 记录调用前 session ID
       let resetCalled = false;
       const originalResetSession = mcpGateway.resetSession.bind(mcpGateway);
       mcpGateway.resetSession = () => {
@@ -73,7 +66,6 @@ test('【Storage 持久化写入异常与一致性测试】', async (t) => {
 
       mcpGateway.resetSession = originalResetSession;
 
-      // 验证返回状态码为 500
       assert.equal(res.status, 500, '磁盘写入异常时，接口状态码必须为 500，不得返回 200');
 
       const body = await res.json();
@@ -81,7 +73,6 @@ test('【Storage 持久化写入异常与一致性测试】', async (t) => {
       assert.match(body.error, /保存配置失败/, '应包含清晰的保存失败错误信息');
       assert.equal(resetCalled, false, '磁盘保存失败时，严禁提前重置/更新 MCP Gateway 会话');
 
-      // 验证磁盘上的真实配置仍为旧名称
       fs.writeFileSync = originalWriteFileSync;
       const currentConfig = storage.getConfig();
       assert.equal(currentConfig.petName, '初始麦麦宝', '磁盘上的配置必须保持原样，不被脏内存污染');
@@ -115,10 +106,8 @@ test('【Storage 持久化写入异常与一致性测试】', async (t) => {
       const body = await res.json();
       assert.equal(body.success, false, '接口 success 必须为 false');
 
-      // 关键断言：落盘失败严禁向桌宠客户端继续广播动作
       assert.equal(emittedBroadcasts.length, 0, '落盘失败时不得向桌宠客户端广播任何未持久化的动作');
 
-      // 验证磁盘读取的状态动作未改变
       fs.writeFileSync = originalWriteFileSync;
       const currentState = storage.getPetState();
       assert.notEqual(currentState.currentAction, 'wave', '磁盘状态中的 currentAction 不应变为 wave');
@@ -148,10 +137,8 @@ test('【Storage 持久化写入异常与一致性测试】', async (t) => {
       const body = await res.json();
       assert.equal(body.success, false, '接口 success 必须为 false');
 
-      // 验证没有广播任何状态与跳跃动作
       assert.equal(emittedBroadcasts.length, 0, '落盘失败不得广播任何消息');
 
-      // 恢复后验证历史没有写入这次失败的抚摸
       fs.writeFileSync = originalWriteFileSync;
       const history = storage.getHistory();
       assert.ok(

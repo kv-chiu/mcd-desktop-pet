@@ -25,7 +25,6 @@ func show_speech(text: String, duration: float = 4.0) -> void:
 	if current_tween and current_tween.is_valid():
 		current_tween.kill()
 
-	# Pop-in animation
 	current_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	current_tween.tween_property(self, "modulate:a", 1.0, 0.25)
 	current_tween.tween_property(self, "scale", Vector2.ONE, 0.25)

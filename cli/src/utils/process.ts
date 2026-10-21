@@ -39,7 +39,6 @@ export function readPidFile(): ServerProcessInfo | null {
       }
     }
   } catch {
-    // ignore read error
   }
   return null;
 }
@@ -55,7 +54,6 @@ export function removePidFile(): void {
     try {
       fs.unlinkSync(pidPath);
     } catch {
-      // ignore unlink error
     }
   }
 }

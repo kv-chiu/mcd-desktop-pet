@@ -1,6 +1,5 @@
 extends SceneTree
 
-# godot --headless --path desktop --script res://tests/action_idle_transition.gd
 var pet: DesktopPet
 var completions: Array[String] = []
 var failures: int = 0
@@ -50,7 +49,6 @@ func _run() -> void:
 		_check(pet.idle_time < 0.1, "Idle breathing did not restart from zero")
 		_check(pet.action_tween == null, "Action motion tween survived completion")
 
-	# 打断动作后，旧动画及其计时器不能覆盖新的状态。
 	for interruption in ["action", "drag", "walk", "return_action", "return_drag", "return_walk"]:
 		pet.play_jump()
 		pet.anim_sprite.frame = 26
@@ -74,7 +72,6 @@ func _run() -> void:
 			_check(pet.current_state == DesktopPet.State.IDLE, "Dragging did not return to idle")
 		pet.play_idle()
 
-	# 朝左触发动作时，翻转会留下不同的尺寸；补帧起点仍须匹配屏幕上的姿态。
 	pet.facing_direction = -1
 	pet.anim_sprite.scale = Vector2(-1.0, 1.0)
 	pet.play_wave()
@@ -100,7 +97,6 @@ func _run() -> void:
 	_check(pet.action_tween == null, "Interrupted jump still has a motion tween")
 	_check(absf(pet.anim_sprite.position.y - pet.base_pos_y) < 2.0, "Interrupted jump moved the idle sprite")
 
-	# 测试 speak 等常态待机动作在 State.ACTION 下的微呼吸保持与平滑过渡
 	pet.play_action_by_name("speak", 0.6)
 	_check(pet.current_state == DesktopPet.State.ACTION, "speak did not enter ACTION state")
 	_check(pet.anim_sprite.animation == &"idle", "speak did not fallback to idle animation")
@@ -109,7 +105,6 @@ func _run() -> void:
 	_check(pet.current_breath_y != 0.0, "speak did not perform subtle breathing during speech action")
 	await create_timer(0.35).timeout
 	_check(pet.current_state == DesktopPet.State.IDLE, "speak did not transition back to IDLE")
-	# 测试点击小宝弹性反馈 (play_click_bounce) 与微呼吸互不干扰
 	pet.play_click_bounce()
 	_check(pet.click_tween != null and pet.click_tween.is_running(), "click bounce tween did not start")
 	await create_timer(0.6).timeout

@@ -47,7 +47,6 @@ export type OfficialToolId =
   | 'query-partystore-session'
   | 'party-order-create';
 
-// Backwards compatibility aliases
 export type ToolType = OfficialToolId | 'campaign-calender' | 'my-coupons';
 
 export interface ToolParamDef {
@@ -135,7 +134,6 @@ export interface CallToolResult {
   [key: string]: unknown;
 }
 
-// 1. 传输层状态 (HTTP / 网络连通性)
 export interface TransportStatus {
   success: boolean;
   status: number;
@@ -144,7 +142,6 @@ export interface TransportStatus {
   error?: string;
 }
 
-// 2. JSON-RPC 协议层状态 (JSON-RPC 2.0 规范与协议级错误)
 export interface JsonRpcStatus {
   success: boolean;
   id?: string | number;
@@ -155,7 +152,6 @@ export interface JsonRpcStatus {
   };
 }
 
-// 3. 工具执行层状态 (MCP tools/call 规范，尤其是 isError 标志)
 export interface ToolExecutionStatus {
   success: boolean;
   isError: boolean;
@@ -165,7 +161,6 @@ export interface ToolExecutionStatus {
   error?: string;
 }
 
-// 4. 业务结果层状态 (实际业务结果驱动：区分完全成功、部分成功、业务失败与结果未知)
 export type BusinessOutcome = 'full_success' | 'partial_success' | 'failure' | 'neutral' | 'unknown';
 
 export interface BusinessStatus {
@@ -178,7 +173,6 @@ export interface BusinessStatus {
   data?: any;
 }
 
-// 综合分层状态评估模型
 export interface ExecutionLayers {
   transport: TransportStatus;
   rpc: JsonRpcStatus;
@@ -186,7 +180,6 @@ export interface ExecutionLayers {
   business: BusinessStatus;
 }
 
-// 桌宠动作反馈建议 (只能由实际业务结果驱动)
 export interface PetFeedbackAdvice {
   shouldFeedback: boolean;
   action: PetActionType;
@@ -216,7 +209,6 @@ export interface CategoryInfo {
   description: string;
 }
 
-// Visualizer Models
 export interface ActivityItem {
   title: string;
   content: string;

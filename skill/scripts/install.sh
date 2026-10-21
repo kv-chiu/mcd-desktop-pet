@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# 麦当劳桌宠与 Agent 技能安装、自检与 PATH 自动配置脚本 (POSIX Shell 零依赖版)
-# 自动将 mcd CLI 加入环境变量，配置 Token 与健康状态自检
 
 set -e
 
@@ -26,10 +24,8 @@ echo "======================================================"
 echo "🍔 麦当劳桌宠 Agent 技能安装与环境配置 (Shell 版)"
 echo "======================================================"
 
-# 1. 自动配置 CLI 独立入口并加入 PATH 环境变量
 mkdir -p "$BIN_DIR"
 
-# 查找可用的 CLI bundle
 CLI_BUNDLE=""
 for candidate in \
   "$DIR/../../server/cli.bundle.mjs" \
@@ -59,7 +55,6 @@ fi
 EOF
 chmod +x "$MCD_BIN"
 
-# 写入 shell 配置文件
 ADDED_RC=""
 for rc in "$HOME_DIR/.zshrc" "$HOME_DIR/.bashrc" "$HOME_DIR/.bash_profile"; do
   if [ -f "$rc" ]; then
@@ -75,7 +70,6 @@ EOF
   fi
 done
 
-# 如果 ~/.local/bin 存在，创建软链接
 if [ -d "$HOME_DIR/.local/bin" ]; then
   ln -sf "$MCD_BIN" "$HOME_DIR/.local/bin/mcd" 2>/dev/null || true
 fi
@@ -87,7 +81,6 @@ else
   echo "✔ PATH 环境变量已配置就绪"
 fi
 
-# 2. 如果传入了 Token 参数，则直接配置
 if [ -f "$CONFIG_FILE" ]; then
   READ_PORT=$(grep -o '"port"[^,}]*' "$CONFIG_FILE" 2>/dev/null | grep -o '[0-9]*' || true)
   if [ -n "$READ_PORT" ] && [ "$READ_PORT" -gt 0 ] 2>/dev/null; then
@@ -102,7 +95,6 @@ if [ -n "$TOKEN_ARG" ]; then
   echo "✔ Token 已提交配置"
 fi
 
-# 3. 检测中枢服务连通性
 echo "🔍 检查中枢服务 (Port: $PORT)..."
 HEALTH=$(curl -s --connect-timeout 2 "${BASE_URL}/api/health" 2>/dev/null || true)
 

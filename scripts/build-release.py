@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-McDonald's Desktop Pet - Release Packaging & Build Automation Script
-麦当劳桌宠一键跨平台打包与发布脚本
 
-职责:
-1. 编译全栈项目 (@mcd/shared, web 前端 Vite, server 中枢服务, cli 命令行)
-2. 使用 esbuild 将 server 与 cli 打包为单文件独立零依赖 bundle (server.bundle.mjs, cli.bundle.mjs)
-3. 自动导出 Godot 4.x 桌面宠物客户端 (Windows .exe, macOS .app Universal, Linux .x86_64)
-4. 组装多端开箱即用发布包 (Windows, macOS, Linux, AI Agent Skill 独立包)
-5. 自动植入一键启停脚本 (start.sh, start.bat, stop.sh, stop.bat) 与详细使用手册
-6. 生成最终压缩归档 (.zip, .tar.gz) 与 SHA-256 校验和清单
-"""
 
 import sys
 import os
@@ -47,9 +36,7 @@ def log_error(msg):
 
 
 def run_cmd(cmd, cwd=PROJECT_ROOT, check=True, env=None):
-    """运行外部命令并实时输出"""
     if isinstance(cmd, list):
-        # Windows 的 pnpm / npx 通常是 .cmd，CreateProcess 不会自动补全扩展名。
         cmd = [shutil.which(cmd[0]) or cmd[0], *cmd[1:]]
     log(f"执行命令: {' '.join(cmd) if isinstance(cmd, list) else cmd} (cwd: {os.path.relpath(cwd, PROJECT_ROOT)})")
     merged_env = os.environ.copy()
@@ -64,7 +51,6 @@ def run_cmd(cmd, cwd=PROJECT_ROOT, check=True, env=None):
 
 
 def get_version():
-    """从 package.json 获取版本号"""
     pkg_path = os.path.join(PROJECT_ROOT, "package.json")
     try:
         with open(pkg_path, "r", encoding="utf-8") as f:
@@ -75,7 +61,6 @@ def get_version():
 
 
 def find_godot_executable():
-    """查找本地可用的 Godot 4 执行文件"""
     if os.environ.get("GODOT_BIN"):
         return os.environ.get("GODOT_BIN")
     candidates = [
@@ -92,7 +77,6 @@ def find_godot_executable():
 
 
 def calculate_sha256(filepath):
-    """计算文件 SHA-256 哈希值"""
     sha256 = hashlib.sha256()
     with open(filepath, "rb") as f:
         while chunk := f.read(65536):
@@ -100,7 +84,6 @@ def calculate_sha256(filepath):
     return sha256.hexdigest()
 
 
-# ===================== 构建阶段 =====================
 
 def build_shared():
     log("【阶段 1/5】编译跨端共享库 @mcd/shared...")
@@ -125,7 +108,6 @@ def bundle_server_and_cli():
 
     banner_arg = '--banner:js=import { createRequire as __createRequire } from "module"; const require = __createRequire(import.meta.url);'
 
-    # 1. 打包 server
     server_entry = os.path.join(PROJECT_ROOT, "server", "src", "index.ts")
     server_out = os.path.join(bundle_dir, "server.bundle.mjs")
     run_cmd([
@@ -138,7 +120,6 @@ def bundle_server_and_cli():
         f"--outfile={server_out}"
     ])
 
-    # 2. 打包 cli
     cli_entry = os.path.join(PROJECT_ROOT, "cli", "src", "index.ts")
     cli_out = os.path.join(bundle_dir, "cli.bundle.mjs")
     run_cmd([
@@ -155,7 +136,6 @@ def bundle_server_and_cli():
 
 
 def export_godot(target_platform, godot_bin):
-    """使用 Godot 4 导出桌面宠物客户端"""
     desktop_dir = os.path.join(PROJECT_ROOT, "desktop")
     dist_desktop = os.path.join(DIST_DIR, "desktop")
     os.makedirs(dist_desktop, exist_ok=True)
@@ -177,13 +157,11 @@ def export_godot(target_platform, godot_bin):
         os.makedirs(os.path.dirname(out_zip), exist_ok=True)
         ok = run_cmd([godot_bin, "--headless", "--path", desktop_dir, "--export-release", "macOS", out_zip], check=False)
         if ok and os.path.exists(out_zip):
-            # 解压出 .app
             app_dir = os.path.join(dist_desktop, "macos", "McdDesktopPet.app")
             if os.path.exists(app_dir):
                 shutil.rmtree(app_dir)
             with zipfile.ZipFile(out_zip, 'r') as zf:
                 zf.extractall(os.path.dirname(out_zip))
-                # zipfile.extractall 不恢复 Unix 权限，必须保留 .app 的可执行位。
                 for info in zf.infolist():
                     mode = (info.external_attr >> 16) & 0o777
                     if mode:
@@ -200,7 +178,6 @@ def export_godot(target_platform, godot_bin):
     return False
 
 
-# ===================== 启动脚本模板 =====================
 
 START_SH_TEMPLATE = """#!/usr/bin/env bash
 set -e
@@ -211,14 +188,12 @@ echo "======================================================"
 echo "🍔 启动麦当劳桌宠系统 (McDonald's Desktop Pet)"
 echo "======================================================"
 
-# 1. 检查 Node.js 运行环境
 if ! command -v node >/dev/null 2>&1; then
   echo "❌ 错误: 未检测到 Node.js 运行环境！"
   echo "💡 提示: 请先安装 Node.js (推荐 LTS 版本: https://nodejs.org)，安装后双击即可直接运行。"
   exit 1
 fi
 
-# 2. 启动后台中枢服务
 export MCD_WEB_DIR="$DIR/server/web"
 echo "🚀 正在启动中枢服务 (Port: 3001)..."
 node "$DIR/server/server.bundle.mjs" > "$DIR/server.log" 2>&1 &
@@ -226,10 +201,8 @@ SERVER_PID=$!
 echo "$SERVER_PID" > "$DIR/.server.pid"
 echo "✅ 中枢服务已在后台运行 (PID: $SERVER_PID)"
 
-# 等待服务就绪
 sleep 1.2
 
-# 3. 唤起桌面宠物客户端
 if [ -d "$DIR/McdDesktopPet.app" ]; then
   echo "🐾 正在唤起桌面宠物 (macOS)..."
   open "$DIR/McdDesktopPet.app"
@@ -239,7 +212,6 @@ elif [ -f "$DIR/McdDesktopPet.x86_64" ]; then
   "$DIR/McdDesktopPet.x86_64" >/dev/null 2>&1 &
 fi
 
-# 4. 在默认浏览器打开可视化控制大屏
 echo "🌐 正在打开 Web 控制大屏: http://localhost:3001"
 if command -v open >/dev/null 2>&1; then
   open "http://localhost:3001"
@@ -259,7 +231,6 @@ cd "$DIR"
 
 echo "🛑 正在停止麦当劳桌宠及中枢服务..."
 
-# 停止中枢服务
 if [ -f "$DIR/.server.pid" ]; then
   PID=$(cat "$DIR/.server.pid")
   if kill -0 "$PID" 2>/dev/null; then
@@ -269,7 +240,6 @@ if [ -f "$DIR/.server.pid" ]; then
   rm -f "$DIR/.server.pid"
 fi
 
-# 停止桌宠客户端
 pkill -f "McdDesktopPet" 2>/dev/null || true
 echo "✅ 麦当劳桌宠与中枢服务已全部停止。"
 """
@@ -385,10 +355,8 @@ README_TEMPLATE = """# 🍔 麦当劳智能桌面宠物 (McDonald's Desktop Pet)
 """
 
 
-# ===================== 组装与打包阶段 =====================
 
 def assemble_platform_package(target_platform, version):
-    """组装特定平台的解压即用 Release 文件夹"""
     pkg_name = f"mcd-desktop-pet-{target_platform}-v{version}"
     pkg_dir = os.path.join(RELEASE_DIR, pkg_name)
 
@@ -398,7 +366,6 @@ def assemble_platform_package(target_platform, version):
 
     log(f"组装发布包: {pkg_name} ...")
 
-    # 1. 复制 server 和 cli bundle
     server_dest = os.path.join(pkg_dir, "server")
     os.makedirs(server_dest, exist_ok=True)
 
@@ -411,15 +378,12 @@ def assemble_platform_package(target_platform, version):
         os.path.join(server_dest, "cli.bundle.mjs")
     )
 
-    # 2. 复制 Web 前端静态产物
     web_dest = os.path.join(server_dest, "web")
     shutil.copytree(os.path.join(PROJECT_ROOT, "web", "dist"), web_dest)
 
-    # 3. 复制 skill 技能包
     skill_dest = os.path.join(pkg_dir, "skill")
     shutil.copytree(os.path.join(PROJECT_ROOT, "skill"), skill_dest)
 
-    # 4. 复制桌宠可执行程序
     dist_desktop = os.path.join(DIST_DIR, "desktop")
     if target_platform == "macos":
         app_src = os.path.join(dist_desktop, "macos", "McdDesktopPet.app")
@@ -443,7 +407,6 @@ def assemble_platform_package(target_platform, version):
         else:
             log_warn(f"未在 {bin_src} 找到 Linux 桌宠客户端产物")
 
-    # 5. 写入一键 CLI 快捷入口 (替代复杂底层原生命令)
     if target_platform in ("macos", "linux"):
         mcd_sh = os.path.join(pkg_dir, "mcd")
         with open(mcd_sh, "w", encoding="utf-8") as f:
@@ -476,7 +439,6 @@ def assemble_platform_package(target_platform, version):
 
 
 def assemble_standalone_skill(version):
-    """组装独立的 AI Agent Skill 技能分发包"""
     pkg_name = f"mcd-desktop-pet-skill-v{version}"
     pkg_dir = os.path.join(RELEASE_DIR, pkg_name)
 
@@ -510,7 +472,6 @@ def assemble_standalone_skill(version):
 
 
 def create_archive(source_dir, format_type):
-    """将目录打包为 .zip 或 .tar.gz"""
     base_name = os.path.basename(source_dir)
     parent_dir = os.path.dirname(source_dir)
 
@@ -535,7 +496,6 @@ def create_archive(source_dir, format_type):
         return archive_path
 
 
-# ===================== 主控制流程 =====================
 
 def main():
     parser = argparse.ArgumentParser(
@@ -565,7 +525,6 @@ def main():
         shutil.rmtree(RELEASE_DIR)
     os.makedirs(RELEASE_DIR, exist_ok=True)
 
-    # 1. 确定目标平台
     current_sys = platform.system().lower()
     if args.platform == "current":
         if "darwin" in current_sys:
@@ -581,7 +540,6 @@ def main():
 
     log(f"本次构建目标平台: {', '.join(target_platforms)}")
 
-    # 2. 基础编译
     build_shared()
 
     if not args.skip_web:
@@ -590,7 +548,6 @@ def main():
     if not args.skip_bundle:
         bundle_server_and_cli()
 
-    # 3. Godot 导出
     godot_bin = find_godot_executable()
     if not args.skip_godot:
         for p in target_platforms:
@@ -598,17 +555,14 @@ def main():
                 log_error(f"[{p}] Godot 导出失败，停止发布，避免生成缺少桌宠客户端的安装包")
                 sys.exit(1)
 
-    # 4. 组装发布包
     log("【阶段 4/5】组装多端开箱即用发布分发目录...")
     assembled_dirs = []
     for p in target_platforms:
         d = assemble_platform_package(p, version)
         assembled_dirs.append((p, d))
 
-    # 组装独立 Skill 包
     skill_dir = assemble_standalone_skill(version)
 
-    # 5. 生成最终压缩包与校验和
     log("【阶段 5/5】生成压缩包与 SHA-256 校验和清单...")
     archives = []
     for p, d in assembled_dirs:
@@ -619,7 +573,6 @@ def main():
     skill_arc = create_archive(skill_dir, "zip")
     archives.append(skill_arc)
 
-    # 计算校验和
     checksum_file = os.path.join(RELEASE_DIR, "checksums.sha256")
     with open(checksum_file, "w", encoding="utf-8") as f:
         for arc in archives:

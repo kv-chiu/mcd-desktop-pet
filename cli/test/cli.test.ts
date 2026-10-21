@@ -19,7 +19,6 @@ describe('【CLI 核心工具函数单元测试】', () => {
   });
 
   test('3. PID 文件写入、读取与清理生命周期', () => {
-    // 备份原有 PID (如果有)
     const originalPid = readPidFile();
 
     const mockInfo = {
@@ -38,7 +37,6 @@ describe('【CLI 核心工具函数单元测试】', () => {
     removePidFile();
     assert.equal(readPidFile(), null);
 
-    // 恢复原有 PID
     if (originalPid) {
       writePidFile(originalPid);
     }
@@ -49,7 +47,6 @@ describe('【CLI 服务启停集成测试】', () => {
   const TEST_PORT = 3199;
 
   after(async () => {
-    // 确保测试结束清理测试端口服务
     await stopServer({ force: true, silent: true });
   });
 
@@ -60,7 +57,6 @@ describe('【CLI 服务启停集成测试】', () => {
   });
 
   test('2. 正常启动后台守护服务 (start)', async () => {
-    // 确保前置停止
     await stopServer({ force: true, silent: true });
 
     const startRes = await startServer({ port: TEST_PORT, silent: true });
@@ -70,7 +66,6 @@ describe('【CLI 服务启停集成测试】', () => {
     assert.ok(pid > 0);
     assert.equal(isPidRunning(pid), true);
 
-    // 查看状态
     const statusRes = await showServerStatus({ port: TEST_PORT, json: true, silent: true });
     assert.equal(statusRes.success, true);
     assert.equal((statusRes.data as any)?.running, true);
@@ -100,10 +95,8 @@ describe('【CLI 服务启停集成测试】', () => {
     assert.equal(stopRes.success, true);
     assert.match(stopRes.message, /已成功停止/);
 
-    // 确认 PID 文件已清理
     assert.equal(readPidFile(), null);
 
-    // 确认状态为未运行
     const statusRes = await showServerStatus({ port: TEST_PORT, json: true, silent: true });
     assert.equal((statusRes.data as any)?.running, false);
   });

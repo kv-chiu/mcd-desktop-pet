@@ -28,7 +28,6 @@ export function buildInputSchema(params: ToolParamDef[]): ToolInputSchema {
 }
 
 const RAW_OFFICIAL_TOOLS: Omit<ToolMetadata, 'nameZh' | 'inputSchema'>[] = [
-  // 1. 营养信息
   {
     id: 'list-nutrition-foods',
     name: '餐品营养信息列表',
@@ -51,7 +50,6 @@ const RAW_OFFICIAL_TOOLS: Omit<ToolMetadata, 'nameZh' | 'inputSchema'>[] = [
     exampleArgs: { keyword: '汉堡' },
   },
 
-  // 2. 点餐与外送 - 地址管理
   {
     id: 'delivery-query-addresses',
     name: '获取用户可配送地址列表',
@@ -144,7 +142,6 @@ const RAW_OFFICIAL_TOOLS: Omit<ToolMetadata, 'nameZh' | 'inputSchema'>[] = [
     exampleArgs: { address: '北京市朝阳区三里屯' },
   },
 
-  // 3. 点餐与门店 - 门店与菜单
   {
     id: 'query-meal-assistance',
     name: '查询助餐服务',
@@ -307,7 +304,6 @@ const RAW_OFFICIAL_TOOLS: Omit<ToolMetadata, 'nameZh' | 'inputSchema'>[] = [
     exampleArgs: { storeId: '1400001', productCode: '1001' },
   },
 
-  // 4. 点餐与外送 - 价格计算与订单
   {
     id: 'calculate-price',
     name: '商品价格计算',
@@ -493,7 +489,6 @@ const RAW_OFFICIAL_TOOLS: Omit<ToolMetadata, 'nameZh' | 'inputSchema'>[] = [
     exampleArgs: { page: 1, pageSize: 10 },
   },
 
-  // 5. 日常与日历
   {
     id: 'campaign-calendar',
     name: '活动日历查询工具',
@@ -527,7 +522,6 @@ const RAW_OFFICIAL_TOOLS: Omit<ToolMetadata, 'nameZh' | 'inputSchema'>[] = [
     exampleArgs: {},
   },
 
-  // 6. 优惠券
   {
     id: 'available-coupons',
     name: '麦麦省券列表查询',
@@ -565,7 +559,6 @@ const RAW_OFFICIAL_TOOLS: Omit<ToolMetadata, 'nameZh' | 'inputSchema'>[] = [
     exampleArgs: {},
   },
 
-  // 7. 积分与商城
   {
     id: 'query-my-account',
     name: '我的积分查询',
@@ -707,7 +700,6 @@ const RAW_OFFICIAL_TOOLS: Omit<ToolMetadata, 'nameZh' | 'inputSchema'>[] = [
     exampleArgs: { orderId: 'MALL_ORD_2026101801' },
   },
 
-  // 8. 积分抽奖
   {
     id: 'query-lottery-info',
     name: '查看积分抽奖活动信息',
@@ -776,7 +768,6 @@ const RAW_OFFICIAL_TOOLS: Omit<ToolMetadata, 'nameZh' | 'inputSchema'>[] = [
     exampleArgs: { page: 1, pageSize: 10 },
   },
 
-  // 9. 麦当劳派对与主题活动
   {
     id: 'query-party-city',
     name: '主题活动城市列表查询',

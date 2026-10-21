@@ -4,7 +4,6 @@ import { mcpGateway } from '../mcp/client.js';
 
 export const configRoutes = new Hono();
 
-// 获取当前配置（Token 脱敏）
 configRoutes.get('/', (c) => {
   const cfg = storage.getConfig();
   const maskedToken = cfg.token
@@ -21,7 +20,6 @@ configRoutes.get('/', (c) => {
   });
 });
 
-// 更新配置
 configRoutes.post('/', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const updateData: Record<string, any> = {};
@@ -53,7 +51,6 @@ configRoutes.post('/', async (c) => {
   try {
     const updated = storage.saveConfig(updateData);
 
-    // 仅在配置成功持久化后，若更新了 Token 则重置 MCP Gateway 会话
     if (typeof body.token === 'string') {
       mcpGateway.resetSession();
     }
@@ -83,7 +80,6 @@ configRoutes.post('/', async (c) => {
   }
 });
 
-// 获取历史操作记录
 configRoutes.get('/history', (c) => {
   const limit = Number(c.req.query('limit')) || 50;
   const list = storage.getHistory(limit);

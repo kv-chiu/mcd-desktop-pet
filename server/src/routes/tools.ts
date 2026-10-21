@@ -6,13 +6,6 @@ import { wsHub } from '../ws/hub.js';
 
 export const toolRoutes = new Hono();
 
-/**
- * 统一根据四层评估结果判断工具调用与业务执行是否成功：
- * 1. 传输层成功: HTTP 200 已满足
- * 2. JSON-RPC 成功: 协议层已正常通信
- * 3. 工具执行成功: result.isError 为 false 且 tool.success 为 true
- * 4. 业务部分成功/完全成功: outcome 为 full_success, partial_success 或 neutral (排除 failure 与 unknown)
- */
 export function evaluateToolSuccess(result: any) {
   const isToolSuccess = !result?.isError && (result?.layers ? result.layers.tool.success : true);
   const isBizSuccess = result?.layers ? isBusinessSuccess(result.layers.business?.outcome) : true;
@@ -27,9 +20,6 @@ export function evaluateToolSuccess(result: any) {
   };
 }
 
-/**
- * 统一构造标准化工具响应结构
- */
 export function formatToolResponse(
   result: any,
   defaultErrorMsg = '执行未成功',
@@ -48,9 +38,6 @@ export function formatToolResponse(
   };
 }
 
-/**
- * 触发桌宠业务驱动反馈
- */
 export function handlePetFeedback(result: any) {
   if (result?.petFeedback?.shouldFeedback) {
     try {
@@ -64,16 +51,12 @@ export function handlePetFeedback(result: any) {
   }
 }
 
-/**
- * 获取规范的 HTTP 错误状态码
- */
 export function getHttpErrorStatus(err: any): number {
   return err?.layers?.transport?.status && err.layers.transport.status >= 400
     ? err.layers.transport.status
     : 500;
 }
 
-// 获取所有支持的 MCP 工具列表
 toolRoutes.get('/', async (c) => {
   const authHeader = c.req.header('Authorization');
   const overrideToken = authHeader ? authHeader.replace(/^Bearer\s+/i, '') : undefined;
@@ -96,7 +79,6 @@ toolRoutes.get('/', async (c) => {
   }
 });
 
-// 初始化与握手检测
 toolRoutes.post('/initialize', async (c) => {
   const authHeader = c.req.header('Authorization');
   const overrideToken = authHeader ? authHeader.replace(/^Bearer\s+/i, '') : undefined;
@@ -119,7 +101,6 @@ toolRoutes.post('/initialize', async (c) => {
   }
 });
 
-// 模拟接口：供测试与验证各层级状态（传输、JSON-RPC、工具执行、业务结果）
 toolRoutes.post('/simulate', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const scenario = body.scenario || c.req.header('x-mock-scenario') || c.req.query('mock') || 'coupon-tool-error';
@@ -145,7 +126,6 @@ toolRoutes.post('/simulate', async (c) => {
   }
 });
 
-// 快捷接口：查询可用优惠券
 toolRoutes.get('/quick/coupons', async (c) => {
   const mockScenario = c.req.header('x-mock-scenario') || c.req.query('mock');
   try {
@@ -160,7 +140,6 @@ toolRoutes.get('/quick/coupons', async (c) => {
   }
 });
 
-// 快捷接口：一键自动领券并通知桌宠（成功反馈只能由实际业务结果驱动）
 toolRoutes.post('/quick/auto-bind', async (c) => {
   const mockScenario = c.req.header('x-mock-scenario') || c.req.query('mock');
   try {
@@ -175,7 +154,6 @@ toolRoutes.post('/quick/auto-bind', async (c) => {
   }
 });
 
-// 快捷接口：活动日历
 toolRoutes.get('/quick/calendar', async (c) => {
   const month = c.req.query('month');
   const mockScenario = c.req.header('x-mock-scenario') || c.req.query('mock');
@@ -193,7 +171,6 @@ toolRoutes.get('/quick/calendar', async (c) => {
   }
 });
 
-// 快捷接口：营养成分查询
 toolRoutes.get('/quick/nutrition', async (c) => {
   const keyword = c.req.query('keyword');
   const mockScenario = c.req.header('x-mock-scenario') || c.req.query('mock');
@@ -211,7 +188,6 @@ toolRoutes.get('/quick/nutrition', async (c) => {
   }
 });
 
-// 通用动态路由：执行指定的 MCP 工具（必须置于所有固定静态路由之后，避免遮挡 /simulate 等固定路由）
 toolRoutes.post('/:name', async (c) => {
   const toolName = c.req.param('name');
   const authHeader = c.req.header('Authorization');

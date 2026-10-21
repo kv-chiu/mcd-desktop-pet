@@ -10,14 +10,10 @@ import {
   TransportStatus,
 } from '../types/mcp.js';
 
-/**
- * 提取 MCP Result 中的主要文本内容
- */
 export function extractTextFromContent(result: any): string {
   if (!result) return '';
   if (typeof result === 'string') return result;
 
-  // 标准 MCP 工具响应: content: [{ type: 'text', text: '...' }]
   if (Array.isArray(result.content)) {
     return result.content
       .map((item: any) => (item?.type === 'text' ? item.text : typeof item === 'string' ? item : JSON.stringify(item)))
@@ -31,9 +27,6 @@ export function extractTextFromContent(result: any): string {
   return typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result);
 }
 
-/**
- * 解析优惠券领取统计
- */
 export function tryExtractJson(text: string): Record<string, any> | null {
   if (!text) return null;
   const trimmed = text.trim();
@@ -57,9 +50,6 @@ export function tryExtractJson(text: string): Record<string, any> | null {
   return null;
 }
 
-/**
- * 提取结构化业务字段（优先解析显式布尔字段、状态码与错误消息，拒绝仅凭缺少中文关键词推断成功）
- */
 export function analyzeExplicitBusinessFields(payload: any): {
   isExplicitFailure: boolean;
   isExplicitSuccess: boolean;
@@ -79,7 +69,6 @@ export function analyzeExplicitBusinessFields(payload: any): {
     payload.description;
   const message = typeof rawMessage === 'string' ? rawMessage.trim() : undefined;
 
-  // 1. 显式失败信号（例如 {"success": false, "message": "请先登录"} 或 code != 0/200）
   if (payload.success === false || payload.isError === true) {
     return { isExplicitFailure: true, isExplicitSuccess: false, message, code: payload.code };
   }
@@ -125,7 +114,6 @@ export function analyzeExplicitBusinessFields(payload: any): {
     };
   }
 
-  // 2. 显式成功信号
   if (payload.success === true) {
     return { isExplicitFailure: false, isExplicitSuccess: true, message, code: payload.code };
   }
@@ -142,9 +130,6 @@ export function analyzeExplicitBusinessFields(payload: any): {
   return { isExplicitFailure: false, isExplicitSuccess: false, message, code: payload.code };
 }
 
-/**
- * 解析优惠券领取统计
- */
 export function parseBindResultStats(text: string): {
   successCount: number;
   failCount: number;
@@ -161,7 +146,6 @@ export function parseBindResultStats(text: string): {
     };
   }
 
-  // 匹配类似 "X张成功" / "Y张失败"
   const successMatch2 = text.match(/(\d+)\s*张成功/);
   const failMatch2 = text.match(/(\d+)\s*张失败/);
   if (successMatch2 || failMatch2) {
@@ -187,16 +171,11 @@ export interface EvaluateLayersParams {
   transportError?: string;
 }
 
-/**
- * 核心评估函数：严格区分传输成功、JSON-RPC 成功、工具执行成功与业务部分成功
- * 并产出严格由实际业务结果驱动的桌宠反馈建议
- */
 export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayers & {
   petFeedback?: PetFeedbackAdvice;
 } {
   const { toolName, rpcResponse, httpStatus = 200, transportError } = params;
 
-  // 1. 传输层评估 (Transport Layer)
   const isTransportOk = !transportError && httpStatus >= 200 && httpStatus < 400;
   const transport: TransportStatus = {
     success: isTransportOk,
@@ -205,7 +184,6 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
     error: transportError || (!isTransportOk ? `HTTP 状态异常: ${httpStatus}` : undefined),
   };
 
-  // 2. JSON-RPC 协议层评估 (JSON-RPC Protocol Layer)
   let rpc: JsonRpcStatus;
   if (!isTransportOk) {
     rpc = {
@@ -245,7 +223,6 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
     };
   }
 
-  // 3. 工具执行层评估 (Tool Execution Layer - MCP tools/call)
   let tool: ToolExecutionStatus;
   const callResult = rpcResponse?.result;
   const isToolError = Boolean(callResult?.isError);
@@ -284,19 +261,16 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
     };
   }
 
-  // 4. 业务结果层评估 (Business Outcome Layer - 业务实际结果)
   let business: BusinessStatus;
   let petFeedback: PetFeedbackAdvice | undefined;
 
   if (!tool.success) {
-    // 工具层已失败，业务必然失败
     business = {
       outcome: 'failure',
       summary: tool.error || '工具执行失败',
       detail: rawText,
     };
 
-    // 失败反馈：绝不能有成功庆祝！
     if (toolName === 'auto-bind-coupons' || toolName === 'exchange-point-coupon') {
       petFeedback = {
         shouldFeedback: true,
@@ -320,8 +294,6 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
       };
     }
   } else {
-    // 工具层执行成功 (isError === false)，进一步深度分析业务实际结果
-    // 优先解析明确业务字段（如 success, code, status, error, message），无法确认时保留未知状态
     const structuredPayload =
       tryExtractJson(rawText) ||
       (callResult?.data && typeof callResult.data === 'object' ? callResult.data : null);
@@ -330,7 +302,6 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
     if (toolName === 'auto-bind-coupons' || toolName === 'exchange-point-coupon') {
       const stats = parseBindResultStats(rawText);
 
-      // 检查明确的否定/失败关键词
       const hasExplicitFailureKeyword =
         rawText.includes('优惠券领取失败') ||
         rawText.includes('领取失败') ||
@@ -355,7 +326,6 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
         };
       } else if (stats.hasMatched) {
         if (stats.successCount > 0 && stats.failCount === 0) {
-          // 全部成功
           business = {
             outcome: 'full_success',
             summary: `成功领取全部 ${stats.successCount} 张优惠券`,
@@ -370,7 +340,6 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
             speech: '主人！麦当劳优惠券已全部为您自动领取好啦！🎉',
           };
         } else if (stats.successCount > 0 && stats.failCount > 0) {
-          // 部分成功
           business = {
             outcome: 'partial_success',
             summary: `部分成功：已领取 ${stats.successCount} 张，${stats.failCount} 张未成功`,
@@ -385,7 +354,6 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
             speech: `主人，为您领取了 ${stats.successCount} 张优惠券，还有 ${stats.failCount} 张未成功哦~🎫`,
           };
         } else {
-          // 成功数为 0
           business = {
             outcome: 'failure',
             summary: stats.failCount > 0 ? `领取失败：共 ${stats.failCount} 张未能领取` : '本次未能领取到优惠券',
@@ -414,7 +382,6 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           speech: `主人，优惠券领取遇到问题：${business.summary}`,
         };
       } else if (isExplicitSuccess || rawText.includes('couponCode') || rawText.includes('img src=')) {
-        // 返回了优惠券卡片内容，判定为完全成功
         business = {
           outcome: 'full_success',
           summary: '优惠券已成功领入卡包',
@@ -426,7 +393,6 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           speech: '主人！麦当劳优惠券已全部为您自动领取好啦！🎉',
         };
       } else {
-        // 未知返回或无可领券，保留未知状态
         business = {
           outcome: 'unknown',
           summary: message || rawText.trim() || '未确认优惠券领取结果',
@@ -494,7 +460,6 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
           speech: '订单已创建！麦麦美味正在加速准备中~🍔',
         };
       } else {
-        // 无法从结构化字段或明确凭据确认成功时，保留未知状态，绝不虚假庆祝
         business = {
           outcome: 'unknown',
           summary: message || rawText.trim() || '订单状态未知，未确认下单凭据',
@@ -630,7 +595,6 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
         };
       }
     } else {
-      // 查询类等常规工具：若包含明确失败指示则判定为 failure，否则 neutral
       if (isExplicitFailure) {
         business = {
           outcome: 'failure',
@@ -666,16 +630,10 @@ export function evaluateToolLayers(params: EvaluateLayersParams): ExecutionLayer
   };
 }
 
-/**
- * 判断业务结果是否属于成功范畴（完全成功、部分成功或中性状态，排除失败与未知结果）
- */
 export function isBusinessSuccess(outcome?: BusinessOutcome): boolean {
   return outcome === 'full_success' || outcome === 'partial_success' || outcome === 'neutral';
 }
 
-/**
- * 统一综合判断工具执行层与业务结果层是否均成功
- */
 export function isOverallSuccess(layers?: ExecutionLayers, isError?: boolean): boolean {
   if (isError) return false;
   if (!layers) return !isError;

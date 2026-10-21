@@ -14,7 +14,6 @@ var random_quotes = [
 	"咔嚓咔嚓，香脆每一天！😋"
 ]
 
-# 午休提醒相关变量
 var lunch_time: String = "12:00"
 var lunch_reminder_enabled: bool = true
 var lunch_advance_minutes: int = 10
@@ -34,21 +33,17 @@ var behavior_ctrl: BehaviorController
 
 
 func _ready() -> void:
-	# Inject window manager into pet
 	pet.window_manager = window_mgr
 	
-	# 初始化行为控制器并挂载
 	behavior_ctrl = BehaviorController.new()
 	behavior_ctrl.name = "BehaviorController"
 	add_child(behavior_ctrl)
 	behavior_ctrl.setup(pet, speech_bubble)
 
-	# Connect window manager input & drag events
 	window_mgr.pet_clicked.connect(_on_pet_clicked)
 	window_mgr.open_context_menu.connect(_on_open_context_menu)
 	window_mgr.drag_started.connect(_on_drag_started)
 
-	# Connect WebSocket events
 	ws_client.connected.connect(_on_ws_connected)
 	ws_client.disconnected.connect(_on_ws_disconnected)
 	ws_client.pet_action_received.connect(_on_pet_action_received)
@@ -62,7 +57,6 @@ func _ready() -> void:
 	context_menu.id_pressed.connect(_on_menu_item_selected)
 	_setup_context_menu()
 
-	# Initial friendly greeting through behavior controller
 	behavior_ctrl.request_system_notice("薯条小宝已就绪！今天想去哪散步呢？🍟", 4.0)
 
 func _process(delta: float) -> void:
@@ -88,7 +82,6 @@ func _gui_input(event: InputEvent) -> void:
 	window_mgr.handle_input(event)
 
 func _on_drag_started() -> void:
-	# 用户开始拖动窗口时，平稳打断当前自主行走
 	pet.interrupt_walk()
 
 func _create_system_font() -> SystemFont:
@@ -105,7 +98,6 @@ func _setup_context_menu() -> void:
 	var font = _create_system_font()
 	context_menu.add_theme_font_override("font", font)
 
-	# 初始化午休设置子菜单（挂载在 context_menu 下）
 	if lunch_menu == null:
 		lunch_menu = PopupMenu.new()
 		lunch_menu.name = "LunchSubmenu"
@@ -113,7 +105,6 @@ func _setup_context_menu() -> void:
 		lunch_menu.add_theme_font_override("font", font)
 		lunch_menu.id_pressed.connect(_on_lunch_menu_item_selected)
 
-	# 初始化提前提醒分钟子菜单（挂载在 lunch_menu 下）
 	if advance_menu == null:
 		advance_menu = PopupMenu.new()
 		advance_menu.name = "AdvanceSubmenu"
@@ -130,14 +121,12 @@ func _setup_context_menu() -> void:
 	context_menu.add_item("挥手", 15)
 	context_menu.add_separator()
 	
-	# 设定午休时间子菜单
 	_update_lunch_submenu()
 	var lunch_label = _get_lunch_menu_title()
 	context_menu.add_submenu_node_item(lunch_label, lunch_menu, 20)
 	
 	context_menu.add_separator()
 	
-	# 全屏穿透开关选项
 	var fs_enabled = window_mgr.is_fullscreen_overlay_enabled()
 	var check_symbol = "✓ " if fs_enabled else "    "
 	context_menu.add_item(check_symbol + "在全屏应用中显示桌宠", 13)
@@ -179,7 +168,6 @@ func _update_lunch_submenu() -> void:
 
 	lunch_menu.add_separator()
 
-	# 提前时间子菜单
 	_update_advance_submenu()
 	var adv_label = "提前提醒时间 (提前 %d 分钟) ▶" % lunch_advance_minutes
 	lunch_menu.add_submenu_node_item(adv_label, advance_menu, 30)
@@ -267,7 +255,6 @@ func _set_lunch_time(new_time: String, enabled: bool) -> void:
 	_update_lunch_submenu()
 	_update_context_menu_lunch_title()
 
-	# 同步给中枢服务持久化
 	ws_client.notify_lunch_time_changed(lunch_time, lunch_reminder_enabled, lunch_advance_minutes)
 
 	if enabled:
@@ -282,7 +269,6 @@ func _set_lunch_advance_minutes(m: int) -> void:
 	_update_lunch_submenu()
 	_update_context_menu_lunch_title()
 
-	# 同步给中枢服务持久化
 	ws_client.notify_lunch_time_changed(lunch_time, lunch_reminder_enabled, lunch_advance_minutes)
 
 	var remind_time = _calculate_remind_time_str(lunch_time, lunch_advance_minutes)

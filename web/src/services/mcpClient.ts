@@ -25,9 +25,6 @@ class MCPClientService {
     return this.serverTools;
   }
 
-  /**
-   * 初始化连接 MCP 会话（通过 Server 中枢网关握手）
-   */
   async initialize(token: string): Promise<any> {
     if (!token || !token.trim()) {
       throw new Error('未提供 MCP Token，请在顶部设置您的 Token');
@@ -59,9 +56,6 @@ class MCPClientService {
     }
   }
 
-  /**
-   * 从服务端动态获取支持的 Tool 列表
-   */
   async listTools(token: string): Promise<MCPToolSchema[]> {
     try {
       const headers: Record<string, string> = {};
@@ -93,16 +87,10 @@ class MCPClientService {
     }
   }
 
-  /**
-   * 规范化 Tool 名称，兼容历史别名
-   */
   normalizeToolName(toolName: string): string {
     return normalizeToolName(toolName);
   }
 
-  /**
-   * 执行指定 Tool 并计时记录（通过 Server 中枢网关，自动联动桌宠）
-   */
   async executeTool(
     token: string,
     toolName: string,
@@ -112,7 +100,6 @@ class MCPClientService {
     const actualToolName = this.normalizeToolName(toolName);
     const startTime = performance.now();
 
-    // 过滤未赋值的空字段
     const cleanArgs: Record<string, any> = {};
     Object.entries(args).forEach(([k, v]) => {
       if (v !== undefined && v !== '' && v !== null) {
@@ -188,14 +175,11 @@ class MCPClientService {
     }
   }
 
-  // ================= 快捷专属 API 封装 ================= //
 
-  // 1. 营养信息
   async getNutritionFoods(token: string, keyword?: string) {
     return this.executeTool(token, 'list-nutrition-foods', keyword ? { keyword } : {});
   }
 
-  // 2. 日历与时间
   async getCalendar(token: string, month?: string) {
     return this.executeTool(token, 'campaign-calendar', month ? { month } : {});
   }
@@ -204,7 +188,6 @@ class MCPClientService {
     return this.executeTool(token, 'now-time-info', {});
   }
 
-  // 3. 优惠券
   async getAvailableCoupons(token: string) {
     return this.executeTool(token, 'available-coupons', {});
   }
@@ -221,7 +204,6 @@ class MCPClientService {
     return this.executeTool(token, 'query-store-coupons', { storeId, orderType });
   }
 
-  // 4. 点餐、外送与门店
   async getDeliveryAddresses(token: string) {
     return this.executeTool(token, 'delivery-query-addresses', {});
   }
@@ -274,7 +256,6 @@ class MCPClientService {
     return this.executeTool(token, 'order-list', { page, pageSize });
   }
 
-  // 5. 积分与商城
   async getMyAccount(token: string) {
     return this.executeTool(token, 'query-my-account', {});
   }
@@ -299,7 +280,6 @@ class MCPClientService {
     return this.executeTool(token, 'mall-order-detail', { orderId });
   }
 
-  // 6. 积分抽奖
   async getLotteryInfo(token: string, activityId?: string) {
     return this.executeTool(token, 'query-lottery-info', activityId ? { activityId } : {});
   }
@@ -312,7 +292,6 @@ class MCPClientService {
     return this.executeTool(token, 'query-my-prizes', { page, pageSize });
   }
 
-  // 7. 主题派对
   async getPartyCities(token: string, productId?: string) {
     return this.executeTool(token, 'query-party-city', productId ? { productId } : {});
   }

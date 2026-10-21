@@ -38,7 +38,6 @@ export async function startServer(options: StartOptions = {}): Promise<CliResult
     return res;
   }
 
-  // 1. 检查是否已有运行中的进程
   const existingPid = readPidFile();
   if (existingPid && isPidRunning(existingPid.pid)) {
     const health = await checkServerHealth(existingPid.port);
@@ -56,12 +55,10 @@ export async function startServer(options: StartOptions = {}): Promise<CliResult
     return res;
   }
 
-  // 若 PID 文件存在但进程已死，清理残留
   if (existingPid) {
     removePidFile();
   }
 
-  // 检查目标端口是否已被其他进程占用
   const portCheck = await checkServerHealth(port, 500);
   if (portCheck.ok) {
     const res: CliResult = {
@@ -74,7 +71,6 @@ export async function startServer(options: StartOptions = {}): Promise<CliResult
     return res;
   }
 
-  // 2. 定位 server 入口文件
   const location = findServerEntry();
   if (!location) {
     const res: CliResult = {
@@ -87,7 +83,6 @@ export async function startServer(options: StartOptions = {}): Promise<CliResult
     return res;
   }
 
-  // 3. 前台运行模式
   if (options.foreground) {
     if (!isJson) {
       console.log(`以[前台模式]启动中枢服务 (Port: ${port})... 按 Ctrl+C 退出\n`);
@@ -132,7 +127,6 @@ export async function startServer(options: StartOptions = {}): Promise<CliResult
     });
   }
 
-  // 4. 后台守护进程模式 (Daemon)
   const logFile = getLogFilePath();
   const logFd = fs.openSync(logFile, 'a');
 
@@ -153,7 +147,6 @@ export async function startServer(options: StartOptions = {}): Promise<CliResult
   child.unref();
   fs.closeSync(logFd);
 
-  // 记录 PID 信息
   writePidFile({
     pid,
     port,
@@ -161,7 +154,6 @@ export async function startServer(options: StartOptions = {}): Promise<CliResult
     entryScript: location.entryScript,
   });
 
-  // 5. 轮询健康检查，验证进程是否启动成功 (最长约 4 秒)
   let isReady = false;
   let hasDied = false;
 
@@ -244,7 +236,6 @@ export async function stopServer(options: StopOptions = {}): Promise<CliResult> 
     return res;
   }
 
-  // 执行终止
   if (force) {
     try {
       process.kill(pid, 'SIGKILL');
@@ -262,7 +253,6 @@ export async function stopServer(options: StopOptions = {}): Promise<CliResult> 
     return res;
   }
 
-  // 正常优雅终止 (SIGTERM)
   try {
     process.kill(pid, 'SIGTERM');
   } catch (e: any) {
@@ -278,7 +268,6 @@ export async function stopServer(options: StopOptions = {}): Promise<CliResult> 
     }
   }
 
-  // 等待进程退出
   const startTime = Date.now();
   let stopped = false;
 
@@ -291,11 +280,9 @@ export async function stopServer(options: StopOptions = {}): Promise<CliResult> 
   }
 
   if (!stopped) {
-    // 超时强制杀死
     try {
       process.kill(pid, 'SIGKILL');
     } catch {
-      // ignore
     }
     removePidFile();
     const res: CliResult = {
@@ -326,17 +313,14 @@ export async function restartServer(options: RestartOptions = {}): Promise<CliRe
     console.log('正在重启麦当劳桌宠中枢服务...');
   }
 
-  // 1. 停止旧服务
   await stopServer({
     force: options.force,
     timeout: options.timeout,
     silent: true,
   });
 
-  // 稍作停顿，等待端口释放
   await sleep(600);
 
-  // 2. 启动新服务
   const startRes = await startServer({
     port: options.port,
     silent: true,
@@ -364,11 +348,9 @@ export async function showServerStatus(options: StatusOptions = {}): Promise<Cli
   const isRunning = Boolean(pidInfo && isPidRunning(pidInfo.pid));
 
   if (!isRunning && pidInfo) {
-    // 清理无效 PID 文件
     removePidFile();
   }
 
-  // 尝试健康检查
   const healthRes = await checkServerHealth(port, 1000);
 
   if (isJson) {
@@ -437,7 +419,6 @@ export async function showServerLogs(options: LogsOptions = {}): Promise<void> {
           fileSize = currentStat.size;
         }
       } catch {
-        // file could be truncated or rotated
       }
     }, 500);
 

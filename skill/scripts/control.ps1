@@ -1,6 +1,3 @@
-# 麦当劳桌宠与 MCP 工具 Agent 控制桥梁 (Windows PowerShell 零依赖版)
-# 专为 Windows 环境打造，基于系统内置 PowerShell / curl.exe，无需 Python 或 Node
-
 param (
     [Parameter(Position=0)]
     [string]$Command = "help",

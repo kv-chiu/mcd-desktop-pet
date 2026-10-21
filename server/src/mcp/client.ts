@@ -39,9 +39,6 @@ export class McpGatewayClient {
     return storage.getConfig().mcpEndpoint || 'https://mcp.mcd.cn/mcp-servers/mcd-mcp';
   }
 
-  /**
-   * 基础 JSON-RPC 2.0 请求
-   */
   async callRpc<T = any>(
     method: string,
     params?: any,
@@ -78,7 +75,6 @@ export class McpGatewayClient {
       throw new Error(`MCP 终端网络连接失败 (${endpoint}): ${networkErr?.message || networkErr}`);
     }
 
-    // 捕获与更新 Session ID
     const newSessionId = resp.headers.get('Mcp-Session-Id') || resp.headers.get('mcp-session-id');
     if (newSessionId) {
       this.sessionId = newSessionId;
@@ -108,7 +104,6 @@ export class McpGatewayClient {
           errMsg = parsed.message;
         }
       } catch {
-        // fallback to errText
       }
       const err: any = new Error(
         resp.status >= 500
@@ -134,9 +129,6 @@ export class McpGatewayClient {
     return data;
   }
 
-  /**
-   * 初始化连接 MCP 会话握手
-   */
   async initialize(overrideToken?: string): Promise<any> {
     const initResp = await this.callRpc(
       'initialize',
@@ -162,9 +154,6 @@ export class McpGatewayClient {
     return initResp.result;
   }
 
-  /**
-   * 动态拉取服务端工具列表
-   */
   async listTools(overrideToken?: string): Promise<MCPToolSchema[]> {
     if (!this.sessionId) {
       await this.initialize(overrideToken);
@@ -197,7 +186,6 @@ export class McpGatewayClient {
   getMockResponse(toolName: string, scenario: string): JsonRpcResponse<CallToolResult> {
     switch (scenario) {
       case 'coupon-tool-error':
-        // 模拟工具返回 result.isError: true、文本“优惠券领取失败”
         return {
           jsonrpc: '2.0',
           id: Date.now(),
@@ -208,7 +196,6 @@ export class McpGatewayClient {
         };
 
       case 'coupon-partial':
-        // 模拟业务部分成功: 成功 2 张，失败 1 张
         return {
           jsonrpc: '2.0',
           id: Date.now(),
@@ -224,7 +211,6 @@ export class McpGatewayClient {
         };
 
       case 'coupon-full-success':
-        // 模拟业务完全成功: 成功 3 张，失败 0 张
         return {
           jsonrpc: '2.0',
           id: Date.now(),
@@ -240,7 +226,6 @@ export class McpGatewayClient {
         };
 
       case 'coupon-biz-failure':
-        // 模拟业务全部失败: 成功 0 张，失败 2 张
         return {
           jsonrpc: '2.0',
           id: Date.now(),
@@ -325,9 +310,6 @@ export class McpGatewayClient {
     }
   }
 
-  /**
-   * 调用执行工具
-   */
   async executeTool(
     toolName: string,
     args: Record<string, any> = {},
@@ -337,7 +319,6 @@ export class McpGatewayClient {
     const actualToolName = normalizeToolName(toolName);
     const startTime = performance.now();
 
-    // 过滤未赋值的字段
     const cleanArgs: Record<string, any> = {};
     for (const [k, v] of Object.entries(args)) {
       if (v !== undefined && v !== '' && v !== null) {
@@ -415,7 +396,6 @@ export class McpGatewayClient {
 
       const httpStatus = typeof (resp as any)?.httpStatus === 'number' ? (resp as any).httpStatus : 200;
 
-      // 进行四层状态评估（传输层、RPC 层、工具层、业务层）
       const evaluation = evaluateToolLayers({
         toolName: actualToolName,
         args: cleanArgs,
@@ -423,7 +403,6 @@ export class McpGatewayClient {
         httpStatus,
       });
 
-      // JSON-RPC 协议级错误或结构异常
       if (!evaluation.rpc.success || resp?.error) {
         const rpcErr: any = new Error(
           resp?.error?.message || evaluation.rpc.error?.message || 'MCP 执行返回未知协议错误'

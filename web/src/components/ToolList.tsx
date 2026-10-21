@@ -29,7 +29,6 @@ export const ToolList: React.FC<ToolListProps> = ({ selectedToolId, onSelectTool
 
   return (
     <section>
-      {/* Title & Stats */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span className="font-l" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -40,7 +39,6 @@ export const ToolList: React.FC<ToolListProps> = ({ selectedToolId, onSelectTool
           </span>
         </div>
 
-        {/* Search */}
         <div style={{ width: '260px', position: 'relative' }}>
           <input
             type="text"
@@ -56,7 +54,6 @@ export const ToolList: React.FC<ToolListProps> = ({ selectedToolId, onSelectTool
         </div>
       </div>
 
-      {/* Category Tabs */}
       <div style={{ marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
         <div className="segmented-control">
           {CATEGORIES.map((cat) => (
@@ -73,7 +70,6 @@ export const ToolList: React.FC<ToolListProps> = ({ selectedToolId, onSelectTool
         </div>
       </div>
 
-      {/* Tools Grid */}
       <div className="grid-tools">
         {filteredTools.map((tool) => {
           const isSelected = selectedToolId === tool.id;

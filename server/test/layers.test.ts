@@ -9,39 +9,33 @@ import { wsHub } from '../src/ws/hub.js';
 import app from '../src/index.js';
 
 test('【分层状态与业务驱动反馈测试】', async (t) => {
-  // 创建独立的临时测试目录隔离真实用户环境，防止写入真实动作状态和模拟历史
   const testDir = path.join(os.tmpdir(), `mcd_test_layers_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`);
   fs.mkdirSync(testDir, { recursive: true });
 
   const originalBaseDir = storage.getBaseDir();
   storage.setBaseDir(testDir);
 
-  // 初始化测试隔离存储配置与桌宠状态
   storage.saveConfig({ petName: '测试麦麦宝', token: 'test_token_layers_123' });
   storage.updatePetState({ favor: 60, experience: 0, currentAction: 'idle' });
 
-  // 收集桌宠收到的事件广播（拦截并隔离，不调用原始实现，避免污染底层桌宠真实动作状态与 WebSocket 广播）
   const emittedPetActions: Array<{ action: string; speech?: string }> = [];
   const originalEmitPetAction = wsHub.emitPetAction.bind(wsHub);
   wsHub.emitPetAction = (action, options) => {
     emittedPetActions.push({ action, speech: options?.speech });
   };
 
-  // 通过测试清理钩子可靠恢复现场
   t.after(() => {
     wsHub.emitPetAction = originalEmitPetAction;
     storage.setBaseDir(originalBaseDir);
     try {
       fs.rmSync(testDir, { recursive: true, force: true });
     } catch {
-      // ignore
     }
   });
 
   await t.test('1. 模拟工具返回 result.isError: true，文本“优惠券领取失败”', async () => {
     emittedPetActions.length = 0;
 
-    // 发起 HTTP POST 请求到 /api/tools/auto-bind-coupons，带上模拟头
     const res = await app.request('/api/tools/auto-bind-coupons', {
       method: 'POST',
       headers: {
@@ -50,31 +44,24 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
       },
     });
 
-    // 1. 传输层状态验证
     assert.equal(res.status, 200, '传输层状态码仍为 HTTP 200 (网络通信成功)');
 
     const body = await res.json();
 
-    // 2. 综合业务状态与分层验证
     assert.equal(body.success, false, '工具或业务失败时，顶级 success 必须为 false (不得误标为 true)');
     assert.ok(body.layers, '响应中必须包含四层状态模型 (layers)');
 
-    // 传输层
     assert.equal(body.layers.transport.success, true, '四层之[传输层]: 成功');
     assert.equal(body.layers.transport.status, 200);
 
-    // JSON-RPC 层
     assert.equal(body.layers.rpc.success, true, '四层之[JSON-RPC层]: 成功通信，无RPC级语法/解析错误');
 
-    // 工具执行层
     assert.equal(body.layers.tool.success, false, '四层之[工具执行层]: 失败 (因为 result.isError 为 true)');
     assert.equal(body.layers.tool.isError, true, '四层之[工具执行层]: isError 标为 true');
 
-    // 业务层
     assert.equal(body.layers.business.outcome, 'failure', '四层之[业务层]: 业务判定为 failure');
     assert.match(body.layers.business.summary, /优惠券领取失败/);
 
-    // 3. 桌宠事件验证：核心规范【成功反馈只能由实际业务结果驱动】
     assert.ok(
       !emittedPetActions.some((e) => e.speech?.includes('优惠券已全部为您自动领取好啦')),
       '桌宠事件【绝不得】收到“优惠券已全部……领取好啦”的庆祝广播！'
@@ -84,7 +71,6 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
       '桌宠事件【绝不得】触发跳跃庆祝动作！'
     );
 
-    // 验证桌宠给出的是失败/提醒反馈
     const failureSpeech = emittedPetActions.find((e) => e.speech?.includes('优惠券领取遇到问题'));
     assert.ok(failureSpeech, '桌宠应收到如实的失败/异常提示信息');
   });
@@ -112,7 +98,6 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
     assert.equal(body.layers.business.successCount, 2);
     assert.equal(body.layers.business.failCount, 1);
 
-    // 桌宠事件验证：绝不夸大为全部成功
     assert.ok(
       !emittedPetActions.some((e) => e.speech?.includes('已全部为您自动领取好啦')),
       '部分成功时桌宠绝不得宣称“全部领取好啦”'
@@ -142,7 +127,6 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
     assert.equal(body.layers.business.successCount, 3);
     assert.equal(body.layers.business.failCount, 0);
 
-    // 此时驱动桌宠庆祝
     const celebration = emittedPetActions.find((e) => e.speech?.includes('优惠券已全部为您自动领取好啦！🎉'));
     assert.ok(celebration, '只有在实际业务完全成功时，才驱动庆祝跳跃与全成播报！');
     assert.equal(celebration.action, 'jump');
@@ -253,7 +237,6 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
     assert.equal(body.layers.tool.success, false, '工具层必须标为失败');
     assert.equal(body.layers.business.outcome, 'failure', '业务层必须判定为 failure');
 
-    // 桌宠播报严禁出现“订单已创建”
     assert.ok(
       !emittedPetActions.some((e) => e.speech?.includes('订单已创建')),
       '桌宠绝不得在 400 失败时播报“订单已创建”！'
@@ -314,7 +297,6 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
   });
 
   await t.test('11. evaluateToolLayers 单独校验：HTTP 状态与 RPC/result 结构有效性', () => {
-    // A: 真实状态码 400，响应体 {}
     const eval400 = evaluateToolLayers({
       toolName: 'create-order',
       httpStatus: 400,
@@ -327,7 +309,6 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
     assert.equal(eval400.business.outcome, 'failure');
     assert.ok(!eval400.petFeedback?.speech.includes('订单已创建'));
 
-    // B: 状态码 200，但响应体为 {}（未包含 result 或 error）
     const evalEmptyBody = evaluateToolLayers({
       toolName: 'create-order',
       httpStatus: 200,
@@ -339,7 +320,6 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
     assert.equal(evalEmptyBody.business.outcome, 'failure');
     assert.ok(!evalEmptyBody.petFeedback?.speech.includes('订单已创建'));
 
-    // C: 状态码 200，有 jsonrpc 和 id，但 result 缺少 content 数组
     const evalNoContent = evaluateToolLayers({
       toolName: 'create-order',
       httpStatus: 200,
@@ -359,7 +339,6 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
   await t.test('12. 业务显式字段解析：工具返回 {"success":false,"message":"请先登录"} 时，严格判定为失败，严禁播报成功', async () => {
     emittedPetActions.length = 0;
 
-    // A. 针对 create-order
     const resOrder = await app.request('/api/tools/create-order', {
       method: 'POST',
       headers: {
@@ -382,7 +361,6 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
       '桌宠应提示未登录'
     );
 
-    // B. 单独评估 mall-create-order
     const evalMall = evaluateToolLayers({
       toolName: 'mall-create-order',
       httpStatus: 200,
@@ -400,7 +378,6 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
     assert.ok(!evalMall.petFeedback?.speech.includes('积分商品兑换成功啦'));
     assert.equal(evalMall.petFeedback?.action, 'idle');
 
-    // C. 单独评估 draw-lottery
     const evalLottery = evaluateToolLayers({
       toolName: 'draw-lottery',
       httpStatus: 200,
@@ -418,7 +395,6 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
     assert.ok(!evalLottery.petFeedback?.speech.includes('抽奖完成'));
     assert.equal(evalLottery.petFeedback?.action, 'idle');
 
-    // D. 单独评估 auto-bind-coupons
     const evalCoupon = evaluateToolLayers({
       toolName: 'auto-bind-coupons',
       httpStatus: 200,

@@ -1,6 +1,4 @@
 #!/usr/bin/env bash
-# 麦当劳桌宠与 MCP 工具 Agent 控制桥梁 (POSIX Shell 零外部依赖版)
-# 使用系统自带 curl 发送请求，无需 Python、Node 或任何第三方库
 
 set -e
 

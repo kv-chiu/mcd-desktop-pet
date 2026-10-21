@@ -40,7 +40,6 @@ function findWebDistDir(): string | null {
 
 const app = new Hono();
 
-// Middleware
 app.use('*', logger());
 app.use(
   '*',
@@ -51,7 +50,6 @@ app.use(
   })
 );
 
-// WebSocket Setup
 const { injectWebSocket, upgradeWebSocket } = createNodeWebSocket({ app });
 
 app.get(
@@ -78,13 +76,11 @@ app.get(
   })
 );
 
-// API Routes
 app.route('/api/pet', petRoutes);
 app.route('/api/tools', toolRoutes);
 app.route('/api/config', configRoutes);
 app.route('/api', systemRoutes);
 
-// Web UI 静态资源托管与单页应用 (SPA) 路由回退
 const webDistDir = findWebDistDir();
 if (webDistDir) {
   const relPath = path.relative(process.cwd(), webDistDir) || '.';
@@ -97,7 +93,6 @@ if (webDistDir) {
     return c.html(html);
   });
 } else {
-  // 当未构建前端静态资源时回退至 JSON API 问候
   app.get('/', (c) => {
     return c.json({
       name: 'McDonalds Desktop Pet Central Server',
@@ -113,7 +108,6 @@ if (webDistDir) {
   });
 }
 
-// Start Server (only when not running automated tests)
 const isTest = process.env.NODE_ENV === 'test' || process.argv.some((arg) => arg.includes('test'));
 
 if (!isTest) {

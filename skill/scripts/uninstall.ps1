@@ -1,4 +1,3 @@
-# 麦当劳桌宠与 Agent 技能干净卸载脚本 (Windows PowerShell 版)
 param (
     [switch]$Purge
 )
@@ -11,7 +10,6 @@ Write-Host "======================================================" -ForegroundC
 Write-Host "🧹 麦当劳桌宠 Skill & CLI 干净卸载程序 (Windows)" -ForegroundColor Cyan
 Write-Host "======================================================" -ForegroundColor Cyan
 
-# 1. 停止运行中的进程
 Get-Process -Name "McdDesktopPet" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 
 $pidFile = Join-Path $ConfigDir "server.pid"
@@ -26,7 +24,6 @@ if (Test-Path $pidFile) {
     Remove-Item -Path $pidFile -Force -ErrorAction SilentlyContinue
 }
 
-# 2. 从 Windows User PATH 中彻底移除
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($userPath) {
     $normalizedBin = if (Test-Path $BinDir) { (Resolve-Path $BinDir).Path } else { $BinDir }
@@ -36,13 +33,11 @@ if ($userPath) {
     Write-Host "✔ 已从 Windows 用户环境变量 PATH 中移除: $BinDir" -ForegroundColor Green
 }
 
-# 3. 清理 bin 目录
 if (Test-Path $BinDir) {
     Remove-Item -Path $BinDir -Recurse -Force -ErrorAction SilentlyContinue
     Write-Host "✔ 已清理独立 CLI 执行入口目录: $BinDir" -ForegroundColor Green
 }
 
-# 4. 可选彻底清理配置与历史数据
 if ($Purge -and (Test-Path $ConfigDir)) {
     Remove-Item -Path $ConfigDir -Recurse -Force -ErrorAction SilentlyContinue
     Write-Host "✔ 已彻底抹除用户配置与历史数据: $ConfigDir" -ForegroundColor Green

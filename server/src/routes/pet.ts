@@ -4,13 +4,11 @@ import { wsHub } from '../ws/hub.js';
 
 export const petRoutes = new Hono();
 
-// 获取当前桌宠状态
 petRoutes.get('/state', (c) => {
   const state = storage.getPetState();
   return c.json({ success: true, data: state });
 });
 
-// 触发桌宠特定动作并广播
 petRoutes.post('/action', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const action = (body.action || 'idle') as PetActionType;
@@ -36,7 +34,6 @@ petRoutes.post('/action', async (c) => {
   }
 
   try {
-    // 广播给桌宠播放动画（内部持久化当前动作，若落盘失败则抛错并中止广播）
     wsHub.emitPetAction(action, { duration, speech, sound });
 
     return c.json({
@@ -56,7 +53,6 @@ petRoutes.post('/action', async (c) => {
   }
 });
 
-// 让桌宠说话（显示对话气泡）
 petRoutes.post('/speak', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const text = (body.text || '').trim();
@@ -75,7 +71,6 @@ petRoutes.post('/speak', async (c) => {
   });
 });
 
-// 与桌宠抚摸互动
 petRoutes.post('/interact', (c) => {
   try {
     const { state, message } = storage.interactPet();

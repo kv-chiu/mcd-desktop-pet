@@ -22,7 +22,6 @@ export const ToolExecutor: React.FC<ToolExecutorProps> = ({
   const [formData, setFormData] = useState<Record<string, any>>({});
 
   useEffect(() => {
-    // Reset or populate with initialArgs or defaultValue
     const initial: Record<string, any> = {};
     tool.params.forEach((param) => {
       if (initialArgs && initialArgs[param.name] !== undefined) {
@@ -60,7 +59,6 @@ export const ToolExecutor: React.FC<ToolExecutorProps> = ({
 
   return (
     <div className="frosted-card" style={{ padding: '24px', marginBottom: '24px' }}>
-      {/* Tool Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
           <div
@@ -110,7 +108,6 @@ export const ToolExecutor: React.FC<ToolExecutorProps> = ({
         )}
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {tool.params.length > 0 ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
@@ -214,7 +211,6 @@ export const ToolExecutor: React.FC<ToolExecutorProps> = ({
           </div>
         )}
 
-        {/* Error Callout */}
         {error && (
           <div
             style={{
@@ -234,7 +230,6 @@ export const ToolExecutor: React.FC<ToolExecutorProps> = ({
           </div>
         )}
 
-        {/* Action bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '8px', borderTop: '1px solid var(--border-subtle)' }}>
           <button
             type="button"

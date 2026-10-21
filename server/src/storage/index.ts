@@ -77,7 +77,6 @@ export class StorageService {
     return this.baseDir;
   }
 
-  // --- Config Storage ---
   getConfig(): AppConfig {
     try {
       if (fs.existsSync(this.configPath)) {
@@ -103,7 +102,6 @@ export class StorageService {
     }
   }
 
-  // --- Pet State Storage ---
   getPetState(): PetState {
     let state = { ...DEFAULT_PET_STATE };
     try {
@@ -115,7 +113,6 @@ export class StorageService {
       console.warn('Error reading pet state, using default:', err);
     }
 
-    // Apply natural decay based on elapsed hours
     return this.applyDecay(state);
   }
 
@@ -141,12 +138,10 @@ export class StorageService {
       updatedAt: new Date().toISOString(),
     };
 
-    // Clamp values
     if (typeof updated.favor === 'number') {
       updated.favor = Math.min(100, Math.max(0, updated.favor));
     }
 
-    // Check level up: 100 exp per level
     while (updated.experience >= updated.level * 100) {
       updated.experience -= updated.level * 100;
       updated.level += 1;
@@ -190,7 +185,6 @@ export class StorageService {
     return { state: updated, message: '主人摸摸头，今天也要开心鸭！' };
   }
 
-  // --- History Storage ---
   getHistory(limit: number = 50): ActionHistoryRecord[] {
     try {
       if (fs.existsSync(this.historyPath)) {
@@ -229,7 +223,6 @@ export class StorageService {
     };
     list.push(newRecord);
 
-    // Keep up to 200 records
     if (list.length > 200) {
       list = list.slice(list.length - 200);
     }

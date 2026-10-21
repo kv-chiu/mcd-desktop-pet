@@ -10,14 +10,10 @@ import {
   OrderItem,
 } from '../types/mcp';
 
-/**
- * 提取 MCP Result 中的主要文本内容
- */
 export function extractTextFromResult(result: any): string {
   if (!result) return '';
   if (typeof result === 'string') return result;
 
-  // 标准 MCP 工具响应: content: [{ type: 'text', text: '...' }]
   if (Array.isArray(result.content)) {
     return result.content
       .map((item: any) => (item?.type === 'text' ? item.text : JSON.stringify(item)))
@@ -40,11 +36,9 @@ export function parseTimeData(structured: any, text: string): TimeData | null {
       const parsed = JSON.parse(match[1].replace(/\n/g, ''));
       return parsed;
     } catch {
-      // ignore
     }
   }
 
-  // 从文本匹配时间
   const dateMatch = text.match(/(\d{4}[-/年]\d{1,2}[-/月]\d{1,2}日?)/);
   const timeMatch = text.match(/(\d{1,2}:\d{2}(?::\d{2})?)/);
   const weekMatch = text.match(/(星期[一二三四五六日天]|周[一二三四五六日天])/);
@@ -203,13 +197,9 @@ export function parseBindResult(text: string): BindResultData {
   };
 }
 
-/**
- * 营养成分列表解析 (表格/列表文本)
- */
 export function parseNutritionFoods(text: string): NutritionItem[] {
   const items: NutritionItem[] = [];
 
-  // 1. 尝试匹配 Markdown 表格
   const tableRows = text.split('\n').filter((l) => l.trim().startsWith('|') && !l.includes('---'));
   if (tableRows.length > 1) {
     for (let i = 1; i < tableRows.length; i++) {
@@ -228,7 +218,6 @@ export function parseNutritionFoods(text: string): NutritionItem[] {
     if (items.length > 0) return items;
   }
 
-  // 2. 尝试从标题块解析
   const blockRegex = /###?\s*(.+?)[\r\n]+([\s\S]*?)(?=(?:###?|$))/g;
   let blockMatch: RegExpExecArray | null;
   while ((blockMatch = blockRegex.exec(text)) !== null) {
@@ -256,9 +245,6 @@ export function parseNutritionFoods(text: string): NutritionItem[] {
   return items;
 }
 
-/**
- * 我的积分账户解析
- */
 export function parsePointsAccount(text: string): PointsAccountData {
   const avail =
     text.match(/可用积分[：:]\s*(\d+)/)?.[1] ||
@@ -280,9 +266,6 @@ export function parsePointsAccount(text: string): PointsAccountData {
   };
 }
 
-/**
- * 积分抽奖信息解析
- */
 export function parseLotteryInfo(text: string): LotteryInfoData {
   const title = text.match(/(?:活动名称|抽奖活动)[：:]\s*([^\n\r]+)/)?.[1] || '麦当劳积分抽奖';
   const status = text.match(/状态[：:]\s*([^\n\r]+)/)?.[1] || '进行中';
@@ -298,9 +281,6 @@ export function parseLotteryInfo(text: string): LotteryInfoData {
   };
 }
 
-/**
- * 历史订单列表解析
- */
 export function parseOrderList(text: string): OrderItem[] {
   const orders: OrderItem[] = [];
   const orderBlocks = text.split(/(?:###|\*\*订单编号|\n---)/);

@@ -25,7 +25,6 @@ export class WebSocketHub {
     this.clients.set(id, client);
     console.log(`[WebSocketHub] Client connected: ${id} (${type}), total: ${this.clients.size}`);
 
-    // Send current pet state upon connection
     this.sendToClient(client, {
       type: 'pet_state_update',
       timestamp: new Date().toISOString(),
@@ -85,14 +84,10 @@ export class WebSocketHub {
     }
   }
 
-  /**
-   * 触发桌宠执行动作（向 desktop 广播）
-   */
   emitPetAction(
     action: PetActionType,
     options?: { duration?: number; speech?: string; sound?: string }
   ): void {
-    // 更新持久化状态
     storage.updatePetState({ currentAction: action });
 
     const msg: WsMessage = {
@@ -110,9 +105,6 @@ export class WebSocketHub {
     this.broadcast(msg);
   }
 
-  /**
-   * 触发桌宠对话气泡
-   */
   emitPetSpeech(text: string, duration: number = 4): void {
     const msg: WsMessage = {
       type: 'pet_speech',
@@ -125,9 +117,6 @@ export class WebSocketHub {
     this.broadcast(msg);
   }
 
-  /**
-   * 广播状态变更
-   */
   emitStateUpdate(state: PetState): void {
     const msg: WsMessage = {
       type: 'pet_state_update',
@@ -137,9 +126,6 @@ export class WebSocketHub {
     this.broadcast(msg);
   }
 
-  /**
-   * 处理客户端上行消息
-   */
   handleIncomingMessage(clientId: string, rawText: string): void {
     try {
       const msg: WsMessage = JSON.parse(rawText);
@@ -153,7 +139,6 @@ export class WebSocketHub {
           break;
 
         case 'pet_click': {
-          // 用户点击了桌宠
           try {
             const { state, message } = storage.interactPet();
             this.emitStateUpdate(state);

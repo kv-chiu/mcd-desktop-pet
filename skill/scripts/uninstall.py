@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-McDonald's Desktop Pet - Skill & CLI Uninstaller
-麦当劳桌宠 AI Agent 技能与 CLI 环境变量干净卸载脚本
 
-职责:
-1. 优雅停止后台中枢服务与桌宠进程
-2. 从系统 PATH 环境变量中彻底移除 mcd CLI (清理 ~/.zshrc, ~/.bashrc, Windows User PATH 等)
-3. 清理 ~/.local/bin/mcd 符号链接与 ~/.mcd-desktop-pet/bin 可执行入口
-4. 提供 --purge 选项以选择性完全清理本地配置与缓存 (~/.mcd-desktop-pet)
-5. 输出详细的卸载检查结果与手动确认指引
-"""
 
 import sys
 import os
@@ -31,7 +21,6 @@ PATH_MARKER_END = "# <<< mcd-desktop-pet cli <<<"
 
 
 def stop_running_service():
-    """停止后台运行的中枢服务"""
     stopped = False
     if os.path.exists(PID_FILE):
         try:
@@ -49,7 +38,6 @@ def stop_running_service():
         except Exception:
             pass
 
-    # 停止 Godot 桌宠进程
     if platform.system() != "Windows":
         try:
             subprocess.run(["pkill", "-f", "McdDesktopPet"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -59,7 +47,6 @@ def stop_running_service():
 
 
 def clean_unix_shell_configs():
-    """从 Unix 常见 shell rc 文件中彻底清理环境变量配置"""
     candidates = [
         os.path.join(HOME_DIR, ".zshrc"),
         os.path.join(HOME_DIR, ".bashrc"),
@@ -87,7 +74,6 @@ def clean_unix_shell_configs():
 
 
 def clean_unix_symlinks():
-    """清理常见用户 bin 目录下的符号链接"""
     symlink_candidates = [
         os.path.join(HOME_DIR, ".local", "bin", "mcd"),
         "/usr/local/bin/mcd",
@@ -104,7 +90,6 @@ def clean_unix_symlinks():
 
 
 def clean_windows_user_path():
-    """从 Windows 用户环境变量 PATH 中移除 ~/.mcd-desktop-pet/bin"""
     cleaned = False
     if platform.system() == "Windows":
         target = os.path.normpath(BIN_DIR)
@@ -133,10 +118,8 @@ def main():
 
     args = parser.parse_args()
 
-    # 1. 停止运行中的进程
     stopped_service = stop_running_service()
 
-    # 2. 清理环境变量配置与链接
     cleaned_rc_files = []
     cleaned_symlinks = []
     cleaned_windows_path = False
@@ -147,7 +130,6 @@ def main():
         cleaned_rc_files = clean_unix_shell_configs()
         cleaned_symlinks = clean_unix_symlinks()
 
-    # 3. 清理 ~/.mcd-desktop-pet/bin
     bin_removed = False
     if os.path.exists(BIN_DIR):
         try:
@@ -156,7 +138,6 @@ def main():
         except Exception:
             pass
 
-    # 4. 可选彻底清理整个 ~/.mcd-desktop-pet
     purged_data = False
     if args.purge and os.path.exists(DATA_DIR):
         try:

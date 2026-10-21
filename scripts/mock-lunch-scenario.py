@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-McDonald's Desktop Pet - Lunch Scenario Mock Test Script
-麦当劳桌面宠物 - 午餐全流程模拟演练与测试脚本
 
-完整流程覆盖:
-  1. 离午休还有10分钟提醒 (wave 打招呼引起注意)
-  2. 推荐今日优惠券 (jump 发现专属优惠 ➔ 停留 3.8s ➔ wave 自动领券成功，两阶段时序播放)
-  3. 推荐商品与营养搭配 (speak 精选套餐搭配)
-  4. 模拟确认下单 (调用下单接口/模拟备餐，jump 庆祝)
-  5. 等送达状态 (配送在途提示，预计时间)
-  6. 外送送达提醒 (jump 欢呼，提示前往前台取餐享用)
 
-用法:
-  python3 scripts/mock-lunch-scenario.py                  # 默认自动播放，每步间隔 4 秒
-  python3 scripts/mock-lunch-scenario.py --step           # 交互单步模式，按回车播放下一步
-  python3 scripts/mock-lunch-scenario.py --delay 3        # 自定义每步间隔秒数
-  python3 scripts/mock-lunch-scenario.py --phase 4        # 单独测试某一特定阶段 (1-6)
-  python3 scripts/mock-lunch-scenario.py --auto-start     # 若中枢服务未启动，自动尝试后台启动
-"""
 
 import sys
 import os
@@ -32,7 +15,6 @@ import subprocess
 CONFIG_FILE = os.path.expanduser("~/.mcd-desktop-pet/config.json")
 DEFAULT_PORT = 3001
 
-# 终端高亮配色
 class Colors:
     HEADER = '\033[95m'
     BLUE = '\033[94m'
@@ -49,7 +31,6 @@ def colored(text: str, color: str) -> str:
         return text
     return f"{color}{text}{Colors.RESET}"
 
-# 场景步骤定义
 SCENARIO_STEPS = [
     {
         "phase": 1,
@@ -75,7 +56,7 @@ SCENARIO_STEPS = [
             "simulate_tool": {
                 "toolName": "auto-bind-coupons",
                 "scenario": "coupon-full-success",
-                "notifyPet": False  # 避免被通用系统消息二次覆盖，由 follow_up 统一优雅呈现
+                "notifyPet": False
             }
         }
     },
@@ -102,7 +83,7 @@ SCENARIO_STEPS = [
         "simulate_tool": {
             "toolName": "create-order",
             "scenario": "order-full-success",
-            "notifyPet": False  # 静默记录下单历史，保持具体的订单号气泡不被泛化文本冲撞
+            "notifyPet": False
         }
     },
     {
@@ -126,7 +107,6 @@ SCENARIO_STEPS = [
 ]
 
 def get_server_port() -> int:
-    """获取当前服务配置端口"""
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
@@ -138,7 +118,6 @@ def get_server_port() -> int:
     return DEFAULT_PORT
 
 def get_lunch_config() -> tuple:
-    """获取当前配置的午休时间与提前提醒分钟"""
     time_str = "12:00"
     advance_min = 10
     if os.path.exists(CONFIG_FILE):
@@ -154,7 +133,6 @@ def get_lunch_config() -> tuple:
     return time_str, advance_min
 
 def check_server_status(port: int) -> bool:
-    """检查中枢服务是否已正常启动并响应"""
     url = f"http://127.0.0.1:{port}/api/health"
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "mcd-mock-tester/1.0"})
@@ -164,7 +142,6 @@ def check_server_status(port: int) -> bool:
         return False
 
 def http_post(port: int, path: str, payload: dict) -> dict:
-    """发送 HTTP POST 请求到中枢服务"""
     url = f"http://127.0.0.1:{port}{path}"
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
@@ -189,7 +166,6 @@ def http_post(port: int, path: str, payload: dict) -> dict:
         return {"error": str(e)}
 
 def auto_start_server(port: int) -> bool:
-    """尝试自动在后台启动中枢服务"""
     print(colored("正在尝试自动启动中枢服务...", Colors.YELLOW))
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     cli_bin = os.path.join(root_dir, "cli", "dist", "index.js")
@@ -210,7 +186,6 @@ def auto_start_server(port: int) -> bool:
     return False
 
 def run_step(port: int, step: dict, is_json: bool = False, fast_mode: bool = False) -> bool:
-    """执行单个演练阶段"""
     phase = step["phase"]
     title = step["title"]
     action = step["action"]
@@ -226,7 +201,6 @@ def run_step(port: int, step: dict, is_json: bool = False, fast_mode: bool = Fal
         print(f"动作: {colored(action, Colors.YELLOW)}  |  持续: {colored(str(duration) + 's', Colors.YELLOW)}")
         print(f"气泡: {colored(speech, Colors.CYAN)}")
 
-    # 1. 触发桌宠主动作与说话气泡
     payload = {
         "action": action,
         "duration": duration,
@@ -234,13 +208,11 @@ def run_step(port: int, step: dict, is_json: bool = False, fast_mode: bool = Fal
     }
     res = http_post(port, "/api/pet/action", payload)
 
-    # 2. 如果包含关联的 MCP 工具模拟（如下单、营养查询），静默触发模拟接口以记录历史
     if simulate_tool:
         sim_res = http_post(port, "/api/tools/simulate", simulate_tool)
         if not is_json:
             print(colored(f"└─ [MCP 模拟] 触发工具 {simulate_tool['toolName']} (场景: {simulate_tool['scenario']})", Colors.DIM))
 
-    # 3. 如果包含两阶段连贯跟进（如阶段 2: 先看清优惠推荐，再自动展示领券成功）
     if follow_up:
         fu_delay = 0.3 if fast_mode else follow_up.get("delay", 3.8)
         if not is_json:
@@ -309,7 +281,6 @@ def main():
         print(colored(f"目标端口: {port}  |  启动等待: {init_wait}s  |  模式: {'单步回车' if args.step else f'自动间隔 {delay}s'}", Colors.DIM))
         print(colored("==================================================", Colors.HEADER + Colors.BOLD))
 
-    # 检查中枢服务是否在线
     if not check_server_status(port):
         if args.auto_start:
             if not auto_start_server(port):
@@ -328,7 +299,6 @@ def main():
     SCENARIO_STEPS[0]["title"] = f"⏰ 步骤 1: 离午休还有 {current_advance_min} 分钟提醒"
     SCENARIO_STEPS[0]["speech"] = f"主人，还有 {current_advance_min} 分钟就要午休（{current_lunch_time}）啦！忙碌了一上午辛苦啦，该想想中午吃什么咯~🍟"
 
-    # 启动前等待缓冲（方便用户切换视线观察桌宠）
     if init_wait > 0 and not args.json:
         wait_int = int(init_wait) if init_wait.is_integer() else init_wait
         print(colored(f"\n⏳ 脚本将在 {wait_int} 秒后正式启动（留出时间方便您切换视角观察桌宠）...", Colors.YELLOW))
@@ -358,7 +328,6 @@ def main():
 
         run_step(port, step, is_json=args.json, fast_mode=args.fast)
 
-        # 步骤间等待（非最后一步且非手动单步时）
         if not args.step and idx < total:
             if not args.json:
                 print(colored(f"⏳ 等待 {delay} 秒进入下一阶段...", Colors.DIM))

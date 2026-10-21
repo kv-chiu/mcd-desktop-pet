@@ -41,7 +41,6 @@ program
   .description('🍔 麦当劳桌宠命令行工具 (McDonald\'s Desktop Pet CLI) - 桌面宠物与 MCP 工具统一控制中枢')
   .version('0.1.0');
 
-// ===================== 顶层服务启停快捷指令 =====================
 
 program
   .command('start')
@@ -92,7 +91,6 @@ program
     await showServerLogs(options);
   });
 
-// ===================== 桌宠动作与表现指令 =====================
 
 const petCmd = program
   .command('pet [action]')
@@ -129,7 +127,6 @@ petCmd
     await handlePetState(options);
   });
 
-// 快捷顶级互动别名
 program
   .command('speak <text>')
   .description('让桌宠弹出说话气泡 (快捷指令)')
@@ -147,7 +144,6 @@ program
     await handlePetInteract(options);
   });
 
-// ===================== 麦当劳优惠券指令 =====================
 
 const couponCmd = program
   .command('coupon')
@@ -169,7 +165,6 @@ couponCmd
     await handleQuickAutoBind(options);
   });
 
-// ===================== 营养成分与活动日历 =====================
 
 program
   .command('nutrition [keyword]')
@@ -187,7 +182,6 @@ program
     await handleQuickCalendar(month, options);
   });
 
-// ===================== MCP 通用工具调用 =====================
 
 program
   .command('tools')
@@ -205,7 +199,6 @@ program
     await handleExecuteTool(name, params, options);
   });
 
-// ===================== 配置管理指令 =====================
 
 const configCmd = program
   .command('config')
@@ -227,7 +220,6 @@ configCmd
     await handleSetToken(token, options);
   });
 
-// ===================== server 命名空间分组指令 =====================
 
 const serverGroup = program
   .command('server')
@@ -281,5 +273,4 @@ serverGroup
     await showServerLogs(options);
   });
 
-// 解析命令行参数
 program.parse(process.argv);

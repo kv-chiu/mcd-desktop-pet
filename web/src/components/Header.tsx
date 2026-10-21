@@ -25,7 +25,6 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="frosted-nav">
       <div className="app-container" style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-          {/* Brand */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div
               style={{
@@ -57,7 +56,6 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Status & Open Platform Link */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             {status === 'connected' ? (
               <span className="apple-badge apple-badge-success">
@@ -95,7 +93,6 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Token Bar */}
         <div
           style={{
             display: 'flex',

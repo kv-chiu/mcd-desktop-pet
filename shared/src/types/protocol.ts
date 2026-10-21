@@ -27,7 +27,7 @@ export type PetActionType =
 
 export interface PetState {
   name: string;
-  favor: number; // 0 - 100
+  favor: number;
   mood: PetMood;
   level: number;
   experience: number;
