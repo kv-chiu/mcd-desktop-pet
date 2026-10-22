@@ -113,7 +113,7 @@ def clean_windows_user_path():
 
 def main():
     parser = argparse.ArgumentParser(description="麦当劳桌宠 AI Agent 技能与 CLI 干净卸载工具")
-    parser.add_argument("--purge", action="store_true", help="完全清理所有本地配置、历史记录与好感度数据 (~/.mcd-desktop-pet)")
+    parser.add_argument("--purge", action="store_true", help="完全清理所有本地配置、历史记录与桌宠状态数据 (~/.mcd-desktop-pet)")
     parser.add_argument("--json", action="store_true", help="以结构化 JSON 格式输出卸载结果")
 
     args = parser.parse_args()

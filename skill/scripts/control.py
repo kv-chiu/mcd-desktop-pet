@@ -223,9 +223,9 @@ def main():
     speak_parser.add_argument("--text", required=True, help="说话文本内容")
     speak_parser.add_argument("--duration", type=float, default=4.0, help="气泡显示时间(秒)")
 
-    subparsers.add_parser("interact", help="与桌宠互动(抚摸/提升好感度)")
+    subparsers.add_parser("interact", help="与桌宠互动(抚摸)")
 
-    subparsers.add_parser("status", help="查看中枢服务健康度与桌宠当前好感度/状态")
+    subparsers.add_parser("status", help="查看中枢服务健康度与桌宠当前状态")
 
     subparsers.add_parser("tools", help="查询麦当劳 33 项官方工具目录")
 

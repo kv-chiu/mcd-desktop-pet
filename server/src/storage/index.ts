@@ -31,10 +31,7 @@ const DEFAULT_CONFIG: AppConfig = {
 
 const DEFAULT_PET_STATE: PetState = {
   name: '麦麦宝',
-  favor: 60,
   mood: 'happy',
-  level: 1,
-  experience: 0,
   currentAction: 'idle',
   lastInteractedTime: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -113,21 +110,7 @@ export class StorageService {
       console.warn('Error reading pet state, using default:', err);
     }
 
-    return this.applyDecay(state);
-  }
-
-  private applyDecay(state: PetState): PetState {
-    let calculatedMood: PetMood = state.mood;
-    if (state.favor >= 60) {
-      calculatedMood = 'happy';
-    } else {
-      calculatedMood = 'normal';
-    }
-
-    return {
-      ...state,
-      mood: calculatedMood,
-    };
+    return state;
   }
 
   updatePetState(partial: Partial<PetState>): PetState {
@@ -137,15 +120,6 @@ export class StorageService {
       ...partial,
       updatedAt: new Date().toISOString(),
     };
-
-    if (typeof updated.favor === 'number') {
-      updated.favor = Math.min(100, Math.max(0, updated.favor));
-    }
-
-    while (updated.experience >= updated.level * 100) {
-      updated.experience -= updated.level * 100;
-      updated.level += 1;
-    }
 
     try {
       this.ensureDirectory();
@@ -160,8 +134,6 @@ export class StorageService {
   interactPet(): { state: PetState; message: string } {
     const current = this.getPetState();
     const updated = this.updatePetState({
-      favor: Math.min(100, current.favor + 5),
-      experience: current.experience + 5,
       mood: 'happy',
       currentAction: 'jump',
       lastInteractedTime: new Date().toISOString(),
@@ -170,7 +142,7 @@ export class StorageService {
     try {
       this.recordHistory({
         type: 'pet_action',
-        summary: '主人抚摸了桌宠 (+5 好感度)',
+        summary: '主人抚摸了桌宠',
       });
     } catch (historyErr) {
       console.error('Failed to record history for interactPet, reverting pet state:', historyErr);

@@ -113,7 +113,7 @@ petCmd
 
 petCmd
   .command('interact')
-  .description('与桌宠进行亲密互动 (抚摸并提升好感度)')
+  .description('与桌宠进行亲密互动 (抚摸)')
   .option('--json', '以结构化 JSON 格式输出结果')
   .action(async (options) => {
     await handlePetInteract(options);
@@ -121,7 +121,7 @@ petCmd
 
 petCmd
   .command('state')
-  .description('查看桌宠当前好感度、心情与等级')
+  .description('查看桌宠当前心情与状态')
   .option('--json', '以结构化 JSON 格式输出结果')
   .action(async (options) => {
     await handlePetState(options);
@@ -138,7 +138,7 @@ program
 
 program
   .command('interact')
-  .description('与桌宠互动 (抚摸并提升好感度)')
+  .description('与桌宠互动 (抚摸)')
   .option('--json', '以结构化 JSON 格式输出')
   .action(async (options) => {
     await handlePetInteract(options);

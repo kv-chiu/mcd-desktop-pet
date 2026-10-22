@@ -16,7 +16,7 @@ test('【分层状态与业务驱动反馈测试】', async (t) => {
   storage.setBaseDir(testDir);
 
   storage.saveConfig({ petName: '测试麦麦宝', token: 'test_token_layers_123' });
-  storage.updatePetState({ favor: 60, experience: 0, currentAction: 'idle' });
+  storage.updatePetState({ currentAction: 'idle' });
 
   const emittedPetActions: Array<{ action: string; speech?: string }> = [];
   const originalEmitPetAction = wsHub.emitPetAction.bind(wsHub);

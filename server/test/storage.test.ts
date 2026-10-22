@@ -16,7 +16,7 @@ test('【Storage 持久化写入异常与一致性测试】', async (t) => {
   storage.setBaseDir(testDir);
 
   storage.saveConfig({ petName: '初始麦麦宝', token: 'initial_token_123456' });
-  storage.updatePetState({ favor: 50, experience: 0, currentAction: 'idle' });
+  storage.updatePetState({ currentAction: 'idle' });
 
   const emittedBroadcasts: Array<{ type: string; payload?: any }> = [];
 

@@ -99,7 +99,7 @@ export async function handlePetInteract(options: { json?: boolean } = {}): Promi
   const res: CliResult = {
     success: response.ok,
     command: 'interact',
-    message: response.ok ? `与桌宠互动成功: ${response.data?.message || '好感度上升！'}` : '互动失败',
+    message: response.ok ? `与桌宠互动成功: ${response.data?.message || '主人摸摸头，今天也要开心鸭！'}` : '互动失败',
     data: response.data,
     error: response.error,
   };
@@ -129,8 +129,6 @@ export async function handlePetState(options: { json?: boolean } = {}): Promise<
     const pet = response.data.data;
     console.log('\n' + pc.bold(pc.yellow(`🐾 桌面宠物当前状态 (${pet.name || '麦麦小宠'})`)));
     console.log(pc.gray('────────────────────────────────────────────'));
-    console.log(`${pc.bold('等级 (Level):')}      Lv.${pet.level || 1}`);
-    console.log(`${pc.bold('好感度 (Favor):')}    ${pet.favor || 0} / 100`);
     console.log(`${pc.bold('当前心情 (Mood):')}    ${pet.mood === 'happy' ? pc.green('开心 (Happy)') : pc.cyan('正常 (Normal)')}`);
     console.log(`${pc.bold('当前动作 (Action):')}  ${pet.currentAction || 'idle'}`);
     console.log(pc.gray('────────────────────────────────────────────\n'));

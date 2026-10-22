@@ -166,7 +166,6 @@ func _is_click_echo(intent: BehaviorIntent) -> bool:
 	if time_since_click >= 0 and time_since_click < 1500:
 		var is_echo_text = intent.speech.contains("摸摸") or \
 						   intent.speech.contains("开心") or \
-						   intent.speech.contains("好感度") or \
 						   intent.speech.contains("喜欢你的抚摸")
 		var is_echo_action = intent.action == "jump" and current_intent != null and current_intent.source == "local_click"
 		if is_echo_text or is_echo_action:
