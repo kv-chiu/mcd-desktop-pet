@@ -121,7 +121,7 @@ petCmd
 
 petCmd
   .command('state')
-  .description('查看桌宠当前心情与状态')
+  .description('查看桌宠当前状态')
   .option('--json', '以结构化 JSON 格式输出结果')
   .action(async (options) => {
     await handlePetState(options);

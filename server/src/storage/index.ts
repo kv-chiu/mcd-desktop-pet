@@ -14,8 +14,8 @@ export interface AppConfig {
   lunchAdvanceMinutes: number;
 }
 
-import type { PetMood, PetActionType, PetState, ActionHistoryRecord } from '@mcd/shared';
-export type { PetMood, PetActionType, PetState, ActionHistoryRecord };
+import type { PetActionType, PetState, ActionHistoryRecord } from '@mcd/shared';
+export type { PetActionType, PetState, ActionHistoryRecord };
 
 const DEFAULT_CONFIG: AppConfig = {
   token: process.env.MCD_MCP_TOKEN || '',
@@ -31,7 +31,6 @@ const DEFAULT_CONFIG: AppConfig = {
 
 const DEFAULT_PET_STATE: PetState = {
   name: '麦麦宝',
-  mood: 'happy',
   currentAction: 'idle',
   lastInteractedTime: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -134,7 +133,6 @@ export class StorageService {
   interactPet(): { state: PetState; message: string } {
     const current = this.getPetState();
     const updated = this.updatePetState({
-      mood: 'happy',
       currentAction: 'jump',
       lastInteractedTime: new Date().toISOString(),
     });

@@ -48,7 +48,7 @@ powershell -File .\skill\scripts\install.ps1 -Token "<你的麦当劳Token>"
 | **“桌宠跳一下”** | `mcd pet jump --json` | 触发跳跃动作 |
 | **“让桌宠冒气泡说话”** | `mcd speak "今天有半价麦辣鸡腿堡！" --json` | 弹出对话气泡 |
 | **“抚摸桌宠 / 和桌宠互动”** | `mcd interact --json` | 亲密互动，触发桌宠欢呼跳跃动画 |
-| **“查看桌宠当前状态”** | `mcd pet state --json` | 查询桌宠当前心情与动作状态 |
+| **“查看桌宠当前状态”** | `mcd pet state --json` | 查询桌宠当前动作与交互状态 |
 
 ---
 

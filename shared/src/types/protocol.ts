@@ -17,8 +17,6 @@ export interface WsMessage<T = any> {
   payload?: T;
 }
 
-export type PetMood = 'happy' | 'normal';
-
 export type PetActionType =
   | 'idle'
   | 'wave'
@@ -27,7 +25,6 @@ export type PetActionType =
 
 export interface PetState {
   name: string;
-  mood: PetMood;
   currentAction: PetActionType;
   lastInteractedTime: string;
   updatedAt: string;
