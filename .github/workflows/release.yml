@@ -27,6 +27,12 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
+      - name: 配置 Go 环境
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          check-latest: true
+
       - name: 配置 Node.js
         uses: actions/setup-node@v4
         with:
@@ -35,99 +41,31 @@ jobs:
       - name: 配置 pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 12.10.1
-
-      - name: 安装项目依赖
-        run: pnpm install --frozen-lockfile
-
-      - name: 构建测试依赖的项目产物
-        run: pnpm build
-
-      - name: 运行全量单元与集成测试
-        run: pnpm test
-
-      - name: 验证跨平台打包逻辑
-        run: python -m unittest discover -s scripts -p 'test_*.py'
-
-  build-matrix:
-    name: 构建跨平台产物 (${{ matrix.platform }})
-    needs: test
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: macos
-            os: macos-latest
-            archive: "mcd-desktop-pet-macos-*.zip"
-          - platform: windows
-            os: windows-latest
-            archive: "mcd-desktop-pet-windows-*.zip"
-          - platform: linux
-            os: ubuntu-latest
-            archive: "mcd-desktop-pet-linux-*.tar.gz"
-
-    runs-on: ${{ matrix.os }}
-    steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          version: 9
 
       - name: 配置 Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: 配置 Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: 配置 pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 12.10.1
-
-      - name: 安装项目依赖
-        run: pnpm install --frozen-lockfile
-
-      - name: 安装与配置 Godot 4 引擎与导出模板
-        uses: chickensoft-games/setup-godot@v2
-        with:
-          version: 4.3.0
-          include-templates: true
-          use-dotnet: false
-
-      - name: 解析 Godot 执行文件路径
-        shell: python
+      - name: 构建 Web 控制台前端产物
         run: |
-          import os
-          from pathlib import Path
-          godot = Path(os.environ["GODOT4"]).resolve(strict=True)
-          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as output:
-              output.write(f"GODOT_BIN={godot}\n")
-          print(f"Godot executable: {godot}")
+          cd web
+          pnpm install --frozen-lockfile
+          pnpm build
 
-      - name: 执行一键打包发布脚本 (build-release.py)
-        run: python scripts/build-release.py --platform ${{ matrix.platform }}
+      - name: 运行 Go 单元与集成测试
+        run: go test -v ./...
 
-      - name: 校验服务与 CLI 产物语法
-        shell: bash
-        run: |
-          set -e
-          node --check dist/bundle/server.bundle.mjs
-          node --check dist/bundle/cli.bundle.mjs
+      - name: 验证跨平台打包逻辑
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
 
-      - name: 上传构建发布产物
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-${{ matrix.platform }}
-          path: dist/release/*
-          if-no-files-found: error
+      - name: 验证 Go 一体化主程序编译
+        run: go build -v -o mcd-desktop-pet ./cmd/mcd-desktop-pet
 
-  publish:
-    name: 发布 GitHub Release
-    needs: build-matrix
+  build-and-release:
+    name: 构建跨平台发行包并发布 Release
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: 检出代码
@@ -135,71 +73,79 @@ jobs:
         with:
           ref: ${{ github.event.inputs.tag || github.ref }}
 
-      - name: 下载各平台打包产物
-        uses: actions/download-artifact@v4
+      - name: 配置 Go 环境
+        uses: actions/setup-go@v5
         with:
-          path: artifacts
-          merge-multiple: true
+          go-version: 'stable'
+          check-latest: true
 
-      - name: 整理发布产物并生成 SHA-256 校验清单
-        id: prepare_assets
+      - name: 配置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 配置 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 构建 Web 控制台前端产物
         run: |
-          mkdir -p final_release
-          cp -v artifacts/*.zip artifacts/*.tar.gz final_release/ 2>/dev/null || true
-          cd final_release
-          sha256sum * > checksums.sha256
-          cat checksums.sha256
+          cd web
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: 执行一键打包发布流水线 (build-release.py)
+        run: python3 scripts/build-release.py --platform all --skip-godot
+
+      - name: 检查发布产物并提取版本标签
+        id: release_info
+        run: |
+          ls -la dist/release/
+          cat dist/release/SHA256SUMS.txt
           echo "tag_name=${{ github.event.inputs.tag || github.ref_name }}" >> $GITHUB_OUTPUT
 
-      - name: 生成发布版本与说明文档
+      - name: 创建并发布 GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.prepare_assets.outputs.tag_name }}
-          name: 麦当劳智能桌面宠物 ${{ steps.prepare_assets.outputs.tag_name }}
+          tag_name: ${{ steps.release_info.outputs.tag_name }}
+          name: 麦当劳便利贴桌面宠物 ${{ steps.release_info.outputs.tag_name }}
           draft: false
           prerelease: false
           files: |
-            final_release/*.zip
-            final_release/*.tar.gz
-            final_release/checksums.sha256
+            dist/release/*.zip
+            dist/release/SHA256SUMS.txt
           body: |
-            # 🍔 麦当劳智能桌面宠物 (McDonald's Desktop Pet) ${{ steps.prepare_assets.outputs.tag_name }}
+            # 🍟 麦当劳便利贴桌面宠物 (McDonald's Desktop Pet) ${{ steps.release_info.outputs.tag_name }}
 
-            感谢使用麦当劳智能桌面宠物！本版本提供跨平台桌宠、中枢服务、Web 控制台与 Agent 技能扩展。启动中枢与 CLI 需要先安装 Node.js 22，已打包的桌宠无需安装 Godot。
-
-            ---
-
-            ## 📦 平台安装包下载与选择
-
-            | 目标平台 / 用途 | 适用系统 | 文件名格式 | 核心特性 |
-            | :--- | :--- | :--- | :--- |
-            | **macOS 版** | macOS 12+ (Apple Silicon & Intel) | `mcd-desktop-pet-macos-*.zip` | 解压即用，原生透明置顶，包含 Universal 二进制与一键 `start.sh` |
-            | **Windows 版** | Windows 10 / 11 (64位) | `mcd-desktop-pet-windows-*.zip` | 解压即用，单文件客户端，双击 `start.bat` 一键唤起桌宠与中枢 |
-            | **Linux 版** | Ubuntu / Debian / Fedora / Arch | `mcd-desktop-pet-linux-*.tar.gz` | 原生 x86_64 客户端与全功能服务端 |
-            | **AI Agent 独立技能包** | Claude Code / Cursor / Antigravity | `mcd-desktop-pet-skill-*.zip` | 零依赖纯 Python 技能扩展包，添加至 Agent skills 即刻可用 |
+            感谢使用麦当劳便利贴桌面宠物！本版本提供基于 Go 原生中枢服务与 Godot 4 表现层的跨平台单文件/单应用包分发，彻底零外部运行时依赖（无需安装 Node.js、Python 或 Godot）。
 
             ---
 
-            ## 🚀 极速上手指南
+            ## 📦 跨平台发行包下载
 
-            ### 1. 普通用户（双击开箱即用）
-            1. 下载对应系统的压缩包并解压到任意文件夹。
-            2. **macOS / Linux**：在终端或双击运行 `./start.sh`；停止时运行 `./stop.sh`。
-            3. **Windows**：双击运行 `start.bat`；停止时双击 `stop.bat`。
-            4. 系统将自动唤起桌面宠物并打开 Web 可视化控制大屏（`http://localhost:23301`）。
+            | 目标平台 | 文件名 | 格式与运行方式 |
+            | :--- | :--- | :--- |
+            | **Windows (x64)** | `mcd-desktop-pet-*-windows-x64.zip` | 解压即用，包含 `mcd-desktop-pet.exe` 单文件，双击直接运行 |
+            | **macOS (Apple Silicon)** | `mcd-desktop-pet-*-macos-arm64.zip` | 适用于 M1/M2/M3/M4 系列 Mac，解压拖入 Applications 双击打开 |
+            | **macOS (Intel)** | `mcd-desktop-pet-*-macos-amd64.zip` | 适用于 Intel 系列 Mac，解压拖入 Applications 双击打开 |
 
-            ### 2. AI Agent 技能集成（添加 skill 即用）
-            将 `skill/` 目录添加至您的 Agent 技能库：
-            ```bash
-            # 环境自检与设置 Token
-            python3 skill/scripts/install.py --token <你的麦当劳Token>
+            ---
 
-            # 自然语言或命令行控制桌宠与麦当劳工具
-            python3 skill/scripts/control.py pet --action wave --speech "主人下午好！"
-            python3 skill/scripts/control.py tool --name list-nutrition-foods --params '{"keyword":"巨无霸"}'
-            ```
+            ## 🚀 极速上手
+
+            1. **双击即玩**：下载解压对应平台的压缩包，直接双击运行主程序。桌面右下角将就席桌面宠物，常驻内存仅约 15MB。
+            2. **桌面便利贴**：右键点击桌宠选择【📝 新建便利贴】或快捷键 `Ctrl+N` / `Cmd+N`；支持自由拖拽缩放与 `Ctrl+V` / `Cmd+V` 截图粘贴。
+            3. **出餐归档**：点击便签右上角印章图标，触发专属印章动效并安全归档至历史便签盒。
+            4. **管理大屏**：终端运行 `mcd-desktop-pet web` 或右键选择【历史便签盒】，自动打开现代深色 Web 控制台。
+            5. **AI Agent 集成**：所有 CLI 命令默认输出纯 JSON，支持无缝对接 Claude Code / Cursor / Codex 等 Agent。
 
             ---
 
             ## 🔐 校验和 (SHA-256)
-            所有产物的完整哈希值请参考附件中的 `checksums.sha256`。
+            所有发布包的 SHA-256 校验和详见附件 `SHA256SUMS.txt`。

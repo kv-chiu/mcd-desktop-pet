@@ -1,0 +1,59 @@
+name: CI (Build & Test)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUTF8: '1'
+
+jobs:
+  lint-and-test:
+    name: 自动化检查与测试
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 配置 Go 环境
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          check-latest: true
+
+      - name: 配置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 配置 pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 构建 Web 控制台前端产物
+        run: |
+          cd web
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: 运行 Go 单元与集成测试
+        run: go test -v ./...
+
+      - name: 验证跨平台打包逻辑
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+
+      - name: 验证 Go 一体化主程序编译
+        run: go build -v -o mcd-desktop-pet ./cmd/mcd-desktop-pet
