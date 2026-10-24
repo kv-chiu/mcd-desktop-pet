@@ -41,7 +41,7 @@ jobs:
       - name: 配置 pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 12.10.1
 
       - name: 配置 Python
         uses: actions/setup-python@v5
@@ -87,7 +87,7 @@ jobs:
       - name: 配置 pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 12.10.1
 
       - name: 配置 Python
         uses: actions/setup-python@v5
