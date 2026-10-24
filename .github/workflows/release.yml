@@ -186,7 +186,7 @@ jobs:
             1. 下载对应系统的压缩包并解压到任意文件夹。
             2. **macOS / Linux**：在终端或双击运行 `./start.sh`；停止时运行 `./stop.sh`。
             3. **Windows**：双击运行 `start.bat`；停止时双击 `stop.bat`。
-            4. 系统将自动唤起桌面宠物并打开 Web 可视化控制大屏（`http://localhost:3001`）。
+            4. 系统将自动唤起桌面宠物并打开 Web 可视化控制大屏（`http://localhost:23301`）。
 
             ### 2. AI Agent 技能集成（添加 skill 即用）
             将 `skill/` 目录添加至您的 Agent 技能库：

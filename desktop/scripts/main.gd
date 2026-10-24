@@ -2,43 +2,47 @@ extends Control
 
 @onready var pet: DesktopPet = $Pet
 @onready var speech_bubble: Control = $SpeechBubble
-@onready var ws_client: Node = $WsClient
+@onready var ws_client: PetWsClient = $WsClient
 @onready var window_mgr: WindowManager = $WindowManager
-@onready var context_menu: PopupMenu = $ContextMenu
+const ThemeLoader = preload("res://scripts/theme_loader.gd")
+const NoteManager = preload("res://scripts/note_manager.gd")
+const ThemedContextMenu = preload("res://scripts/context_menu.gd")
 
-var random_quotes = [
-	"热乎乎的薯条出炉啦！🍟",
-	"主人摸摸头，今天也要元气满满鸭！✨",
-	"走走散散步，肚子消化了又想吃麦辣鸡翅~🍗",
-	"薯条小宝随叫随到！有什么麦麦优惠吗？🍟",
-	"咔嚓咔嚓，香脆每一天！😋"
-]
-
-var lunch_time: String = "12:00"
-var lunch_reminder_enabled: bool = true
-var lunch_advance_minutes: int = 10
-var last_lunch_reminder_date: String = ""
-var time_check_timer: float = 0.0
-
-var lunch_menu: PopupMenu = null
-var advance_menu: PopupMenu = null
-var custom_time_dialog: ConfirmationDialog = null
-var custom_time_edit: LineEdit = null
-var custom_advance_dialog: ConfirmationDialog = null
-var custom_advance_edit: LineEdit = null
-const LUNCH_CONFIG_PATH = "user://lunch_settings.cfg"
-
-const BehaviorController = preload("res://scripts/behavior_controller.gd")
 var behavior_ctrl: BehaviorController
-
+var note_mgr: Node = null
+var context_menu: ThemedContextMenu = null
+var is_desktop_visible: bool = true
+var pet_container: Control = null
 
 func _ready() -> void:
+	# Wrap pet and speech bubble inside a dedicated container so they can be scaled
+	# without changing root viewport stretch, ensuring context menus and subwindows
+	# always remain at crisp 100% standard size and perfect readability.
+	pet_container = Control.new()
+	pet_container.name = "PetContainer"
+	pet_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(pet_container)
+	pet.reparent(pet_container)
+	speech_bubble.reparent(pet_container)
+
 	pet.window_manager = window_mgr
 	
 	behavior_ctrl = BehaviorController.new()
 	behavior_ctrl.name = "BehaviorController"
 	add_child(behavior_ctrl)
 	behavior_ctrl.setup(pet, speech_bubble)
+
+	# Initialize NoteManager
+	note_mgr = NoteManager.new()
+	note_mgr.name = "NoteManager"
+	add_child(note_mgr)
+	note_mgr.setup(ws_client)
+
+	# Initialize ThemedContextMenu
+	context_menu = ThemedContextMenu.new()
+	context_menu.name = "ThemedContextMenu"
+	add_child(context_menu)
+	context_menu.action_triggered.connect(_on_menu_action)
 
 	window_mgr.pet_clicked.connect(_on_pet_clicked)
 	window_mgr.open_context_menu.connect(_on_open_context_menu)
@@ -50,377 +54,128 @@ func _ready() -> void:
 	ws_client.pet_speech_received.connect(_on_pet_speech_received)
 	ws_client.pet_state_received.connect(_on_pet_state_received)
 
-	_load_lunch_settings()
-	_setup_custom_time_dialog()
-	_setup_custom_advance_dialog()
+	# Connect Theme, Visibility, Scale, and Notes signals
+	ws_client.theme_changed.connect(_on_theme_changed)
+	ws_client.visibility_changed.connect(_on_visibility_changed)
+	ws_client.pet_scale_changed.connect(_on_pet_scale_changed)
+	ws_client.note_created.connect(_on_note_created)
+	ws_client.note_archived.connect(_on_note_archived)
+	ws_client.note_deleted.connect(_on_note_deleted)
+	ws_client.note_restored.connect(_on_note_restored)
 
-	context_menu.id_pressed.connect(_on_menu_item_selected)
-	_setup_context_menu()
+	window_mgr.scale_requested.connect(_on_scale_requested)
 
-	behavior_ctrl.request_system_notice("薯条小宝已就绪！今天想去哪散步呢？🍟", 4.0)
+	# Keep root content_scale_mode DISABLED so all popups and context menus
+	# stay at crisp, standard 100% desktop scale and readability.
+	get_tree().root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
+	get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_IGNORE
 
-func _process(delta: float) -> void:
-	if not lunch_reminder_enabled:
-		return
+	var init_scale = PetConfig.get_pet_scale()
+	if init_scale != 1.0:
+		window_mgr.apply_scale(init_scale, false)
+		pet_container.scale = Vector2(init_scale, init_scale)
 
-	time_check_timer += delta
-	if time_check_timer >= 5.0:
-		time_check_timer = 0.0
-		_check_lunch_reminder()
+	# Initialize mouse passthrough matching pet entity (no air wall)
+	update_passthrough()
+	speech_bubble.bubble_opened.connect(update_passthrough)
+	speech_bubble.bubble_closed.connect(update_passthrough)
 
-func _check_lunch_reminder() -> void:
-	var now = Time.get_datetime_dict_from_system()
-	var current_time_str = "%02d:%02d" % [now.hour, now.minute]
-	var today_date_str = "%04d-%02d-%02d" % [now.year, now.month, now.day]
-
-	var remind_time = _calculate_remind_time_str(lunch_time, lunch_advance_minutes)
-	if current_time_str == remind_time and last_lunch_reminder_date != today_date_str:
-		last_lunch_reminder_date = today_date_str
-		_trigger_lunch_reminder(false)
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		if not is_desktop_visible:
+			_toggle_visibility()
 
 func _gui_input(event: InputEvent) -> void:
 	window_mgr.handle_input(event)
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		window_mgr.handle_key_input(event)
+
 func _on_drag_started() -> void:
 	pet.interrupt_walk()
 
-func _create_system_font() -> SystemFont:
-	var font = SystemFont.new()
-	font.font_names = PackedStringArray([
-		"Hiragino Sans GB", "Heiti SC", "STHeiti", "PingFang SC", "Microsoft YaHei", "WenQuanYi Micro Hei", "sans-serif"
-	])
-	var emoji_font = SystemFont.new()
-	emoji_font.font_names = PackedStringArray(["Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"])
-	font.fallbacks = [emoji_font]
-	return font
-
-func _setup_context_menu() -> void:
-	var font = _create_system_font()
-	context_menu.add_theme_font_override("font", font)
-
-	if lunch_menu == null:
-		lunch_menu = PopupMenu.new()
-		lunch_menu.name = "LunchSubmenu"
-		context_menu.add_child(lunch_menu)
-		lunch_menu.add_theme_font_override("font", font)
-		lunch_menu.id_pressed.connect(_on_lunch_menu_item_selected)
-
-	if advance_menu == null:
-		advance_menu = PopupMenu.new()
-		advance_menu.name = "AdvanceSubmenu"
-		lunch_menu.add_child(advance_menu)
-		advance_menu.add_theme_font_override("font", font)
-		advance_menu.id_pressed.connect(_on_advance_menu_item_selected)
-
-	context_menu.clear()
-	context_menu.add_item("散步走走", 10)
-	context_menu.add_item("转身翻转", 11)
-	context_menu.add_item("停下休息", 12)
-	context_menu.add_separator()
-	context_menu.add_item("跳跃", 14)
-	context_menu.add_item("挥手", 15)
-	context_menu.add_separator()
-	
-	_update_lunch_submenu()
-	var lunch_label = _get_lunch_menu_title()
-	context_menu.add_submenu_node_item(lunch_label, lunch_menu, 20)
-	
-	context_menu.add_separator()
-	
-	var fs_enabled = window_mgr.is_fullscreen_overlay_enabled()
-	var check_symbol = "✓ " if fs_enabled else "    "
-	context_menu.add_item(check_symbol + "在全屏应用中显示桌宠", 13)
-	
-	context_menu.add_separator()
-	context_menu.add_item("打开 Web 控制台", 4)
-	context_menu.add_separator()
-	context_menu.add_item("退出桌宠", 5)
-
-func _get_lunch_menu_title() -> String:
-	if not lunch_reminder_enabled:
-		return "设定午休时间 (已关闭)"
-	return "设定午休时间 (%s, 提前%d分)" % [lunch_time, lunch_advance_minutes]
-
-func _update_context_menu_lunch_title() -> void:
-	var idx_lunch = context_menu.get_item_index(20)
-	if idx_lunch != -1:
-		context_menu.set_item_text(idx_lunch, _get_lunch_menu_title())
-
-func _update_lunch_submenu() -> void:
-	if lunch_menu == null:
-		return
-	lunch_menu.clear()
-
-	var presets = ["11:30", "12:00", "12:15", "12:30", "13:00"]
-	for i in range(presets.size()):
-		var t = presets[i]
-		var checked = (lunch_reminder_enabled and lunch_time == t)
-		var prefix = "✓ " if checked else "    "
-		var label = prefix + t + (" (推荐)" if t == "12:00" else "")
-		lunch_menu.add_item(label, 100 + i)
-
-	lunch_menu.add_separator()
-
-	var is_custom = lunch_reminder_enabled and not (lunch_time in presets)
-	var custom_prefix = "✓ " if is_custom else "    "
-	var custom_label = custom_prefix + "自定义时间 (" + lunch_time + ")..." if is_custom else custom_prefix + "自定义时间..."
-	lunch_menu.add_item(custom_label, 110)
-
-	lunch_menu.add_separator()
-
-	_update_advance_submenu()
-	var adv_label = "提前提醒时间 (提前 %d 分钟) ▶" % lunch_advance_minutes
-	lunch_menu.add_submenu_node_item(adv_label, advance_menu, 30)
-
-	lunch_menu.add_separator()
-	lunch_menu.add_item("🔔 立即测试午休提醒 (提前 %d 分钟)" % lunch_advance_minutes, 111)
-
-	lunch_menu.add_separator()
-	var off_prefix = "✓ " if not lunch_reminder_enabled else "    "
-	lunch_menu.add_item(off_prefix + "关闭午休提醒", 120)
-
-func _update_advance_submenu() -> void:
-	if advance_menu == null:
-		return
-	advance_menu.clear()
-
-	var adv_presets = [5, 10, 15, 20, 30]
-	for i in range(adv_presets.size()):
-		var m = adv_presets[i]
-		var checked = (lunch_advance_minutes == m)
-		var prefix = "✓ " if checked else "    "
-		var label = prefix + "提前 %d 分钟" % m + (" (推荐)" if m == 10 else "")
-		advance_menu.add_item(label, 200 + i)
-
-	advance_menu.add_separator()
-
-	var is_custom_adv = not (lunch_advance_minutes in adv_presets)
-	var custom_adv_prefix = "✓ " if is_custom_adv else "    "
-	var custom_adv_label = custom_adv_prefix + "自定义提前分钟 (%d分钟)..." % lunch_advance_minutes if is_custom_adv else custom_adv_prefix + "自定义提前分钟..."
-	advance_menu.add_item(custom_adv_label, 210)
-
-func _on_lunch_menu_item_selected(id: int) -> void:
-	match id:
-		100:
-			_set_lunch_time("11:30", true)
-		101:
-			_set_lunch_time("12:00", true)
-		102:
-			_set_lunch_time("12:15", true)
-		103:
-			_set_lunch_time("12:30", true)
-		104:
-			_set_lunch_time("13:00", true)
-		110:
-			_open_custom_time_dialog()
-		111:
-			_trigger_lunch_reminder(true)
-		120:
-			_set_lunch_time(lunch_time, false)
-
-func _on_advance_menu_item_selected(id: int) -> void:
-	match id:
-		200:
-			_set_lunch_advance_minutes(5)
-		201:
-			_set_lunch_advance_minutes(10)
-		202:
-			_set_lunch_advance_minutes(15)
-		203:
-			_set_lunch_advance_minutes(20)
-		204:
-			_set_lunch_advance_minutes(30)
-		210:
-			_open_custom_advance_dialog()
-
-func _load_lunch_settings() -> void:
-	var cfg = ConfigFile.new()
-	if cfg.load(LUNCH_CONFIG_PATH) == OK:
-		lunch_time = cfg.get_value("lunch", "time", "12:00")
-		lunch_reminder_enabled = cfg.get_value("lunch", "enabled", true)
-		lunch_advance_minutes = cfg.get_value("lunch", "advance_minutes", 10)
-
-func _save_lunch_settings() -> void:
-	var cfg = ConfigFile.new()
-	cfg.load(LUNCH_CONFIG_PATH)
-	cfg.set_value("lunch", "time", lunch_time)
-	cfg.set_value("lunch", "enabled", lunch_reminder_enabled)
-	cfg.set_value("lunch", "advance_minutes", lunch_advance_minutes)
-	cfg.save(LUNCH_CONFIG_PATH)
-
-func _set_lunch_time(new_time: String, enabled: bool) -> void:
-	lunch_time = new_time
-	lunch_reminder_enabled = enabled
-	_save_lunch_settings()
-	_update_lunch_submenu()
-	_update_context_menu_lunch_title()
-
-	ws_client.notify_lunch_time_changed(lunch_time, lunch_reminder_enabled, lunch_advance_minutes)
-
-	if enabled:
-		var remind_time = _calculate_remind_time_str(lunch_time, lunch_advance_minutes)
-		behavior_ctrl.request_menu_action("jump", "午休时间已设为 " + lunch_time + "！\n每天 " + remind_time + " 提前 " + str(lunch_advance_minutes) + " 分钟提醒您点餐~🍟✨", 4.5)
-	else:
-		behavior_ctrl.request_menu_action("idle", "已关闭午休提醒功能~", 2.5)
-
-func _set_lunch_advance_minutes(m: int) -> void:
-	lunch_advance_minutes = m
-	_save_lunch_settings()
-	_update_lunch_submenu()
-	_update_context_menu_lunch_title()
-
-	ws_client.notify_lunch_time_changed(lunch_time, lunch_reminder_enabled, lunch_advance_minutes)
-
-	var remind_time = _calculate_remind_time_str(lunch_time, lunch_advance_minutes)
-	behavior_ctrl.request_menu_action("jump", "午休提醒已设为提前 %d 分钟！\n每天 %s 会准时提醒您选餐（午休 %s）~🍟✨" % [lunch_advance_minutes, remind_time, lunch_time], 4.5)
-
-func _calculate_remind_time_str(t: String, adv_min: int = lunch_advance_minutes) -> String:
-	var parts = t.split(":")
-	if parts.size() < 2:
-		return "11:50"
-	var hour = int(parts[0])
-	var minute = int(parts[1])
-	var total_min = hour * 60 + minute - adv_min
-	while total_min < 0:
-		total_min += 24 * 60
-	var r_hour = (total_min / 60) % 24
-	var r_min = total_min % 60
-	return "%02d:%02d" % [r_hour, r_min]
-
-func _trigger_lunch_reminder(is_test: bool = false) -> void:
-	var tag = "【提醒测试】" if is_test else ""
-	var speech_text = "%s主人，离午休(%s)还有 %d 分钟啦！忙碌了一上午辛苦啦，该想想中午吃什么咯~🍟" % [tag, lunch_time, lunch_advance_minutes]
-	behavior_ctrl.request_reminder(speech_text, "wave", 5.0)
-
-func _setup_custom_time_dialog() -> void:
-	custom_time_dialog = ConfirmationDialog.new()
-	custom_time_dialog.title = "设定午休时间"
-	custom_time_dialog.ok_button_text = "确定"
-	custom_time_dialog.cancel_button_text = "取消"
-	custom_time_dialog.size = Vector2i(280, 120)
-
-	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
-
-	var lbl = Label.new()
-	lbl.text = "请输入午休时间 (24小时制 HH:MM):"
-	vbox.add_child(lbl)
-
-	custom_time_edit = LineEdit.new()
-	custom_time_edit.placeholder_text = "例如: 12:15"
-	custom_time_edit.text = lunch_time
-	vbox.add_child(custom_time_edit)
-
-	custom_time_dialog.add_child(vbox)
-	custom_time_dialog.confirmed.connect(_on_custom_time_confirmed)
-
-	var font = _create_system_font()
-	custom_time_dialog.add_theme_font_override("font", font)
-
-	add_child(custom_time_dialog)
-
-func _open_custom_time_dialog() -> void:
-	if custom_time_dialog:
-		custom_time_edit.text = lunch_time
-		custom_time_dialog.popup_centered()
-
-func _on_custom_time_confirmed() -> void:
-	var text = custom_time_edit.text.strip_edges()
-	var regex = RegEx.new()
-	regex.compile("^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$")
-	if regex.search(text):
-		var parts = text.split(":")
-		var formatted = "%02d:%02d" % [int(parts[0]), int(parts[1])]
-		_set_lunch_time(formatted, true)
-	else:
-		behavior_ctrl.request_system_notice("时间格式不对哦，请输入如 12:15 这样的 24 小时制时间~", 3.5)
-
-func _setup_custom_advance_dialog() -> void:
-	custom_advance_dialog = ConfirmationDialog.new()
-	custom_advance_dialog.title = "设定提前提醒分钟"
-	custom_advance_dialog.ok_button_text = "确定"
-	custom_advance_dialog.cancel_button_text = "取消"
-	custom_advance_dialog.size = Vector2i(280, 120)
-
-	var vbox = VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 8)
-
-	var lbl = Label.new()
-	lbl.text = "请输入提前提醒分钟数 (1 ~ 120 分钟):"
-	vbox.add_child(lbl)
-
-	custom_advance_edit = LineEdit.new()
-	custom_advance_edit.placeholder_text = "例如: 15"
-	custom_advance_edit.text = str(lunch_advance_minutes)
-	vbox.add_child(custom_advance_edit)
-
-	custom_advance_dialog.add_child(vbox)
-	custom_advance_dialog.confirmed.connect(_on_custom_advance_confirmed)
-
-	var font = _create_system_font()
-	custom_advance_dialog.add_theme_font_override("font", font)
-
-	add_child(custom_advance_dialog)
-
-func _open_custom_advance_dialog() -> void:
-	if custom_advance_dialog:
-		custom_advance_edit.text = str(lunch_advance_minutes)
-		custom_advance_dialog.popup_centered()
-
-func _on_custom_advance_confirmed() -> void:
-	var text = custom_advance_edit.text.strip_edges()
-	if text.is_valid_int():
-		var val = int(text)
-		if val >= 1 and val <= 120:
-			_set_lunch_advance_minutes(val)
-			return
-	behavior_ctrl.request_system_notice("请输入 1 到 120 之间的有效分钟数哦~", 3.5)
-
-func _on_menu_item_selected(id: int) -> void:
-	match id:
-		10:
-			behavior_ctrl.request_menu_action("walk", "迈开小短腿，出发去散步咯~ 🚶", 2.5)
-		11:
-			var new_dir = -pet.facing_direction
-			behavior_ctrl.request_menu_action("flip", "唰！纸片小翻身~✨", 2.0, new_dir)
-		12:
-			behavior_ctrl.request_menu_action("stop_walk", "原地立正休息一下~🍟", 2.0)
-		14:
-			behavior_ctrl.request_menu_action("jump", "好耶！起飞跳跃~✨", 2.0)
-		15:
-			behavior_ctrl.request_menu_action("wave", "嗨嗨！挥挥小手打招呼~🍟", 2.0)
-		13:
-			var new_state = not window_mgr.is_fullscreen_overlay_enabled()
-			window_mgr.set_show_over_fullscreen(new_state)
-			if new_state:
-				behavior_ctrl.request_menu_action("idle", "已开启全屏穿透！全屏应用下也能看到我啦~🍟✨", 3.5)
-			else:
-				behavior_ctrl.request_menu_action("idle", "已关闭全屏穿透，恢复普通窗口模式~", 2.5)
-		4:
-			OS.shell_open("http://localhost:8080")
-		5:
-			get_tree().quit()
-
 func _on_open_context_menu(screen_pos: Vector2i) -> void:
-	var idx_fs = context_menu.get_item_index(13)
-	if idx_fs != -1:
-		var fs_enabled = window_mgr.is_fullscreen_overlay_enabled()
-		var check_symbol = "✓ " if fs_enabled else "    "
-		context_menu.set_item_text(idx_fs, check_symbol + "在全屏应用中显示桌宠")
-
-	_update_lunch_submenu()
-	_update_context_menu_lunch_title()
-
+	if not is_desktop_visible:
+		return
 	context_menu.position = screen_pos
 	context_menu.popup()
 
+func _on_menu_action(action: String) -> void:
+	match action:
+		"new_note":
+			_request_create_note()
+		"history":
+			OS.shell_open(PetConfig.get_http_base_url())
+		"toggle_theme":
+			_toggle_theme()
+		"toggle_visibility":
+			_toggle_visibility()
+		"settings":
+			OS.shell_open(PetConfig.get_http_base_url() + "?openSettings=1")
+		"exit":
+			_request_exit()
+
+func _request_exit() -> void:
+	visible = false
+	if note_mgr:
+		note_mgr.set_all_visible(false)
+	var req = HTTPRequest.new()
+	add_child(req)
+	var has_quit = false
+	var do_quit = func():
+		if not has_quit:
+			has_quit = true
+			get_tree().quit()
+	req.request_completed.connect(func(_res, _code, _h, _b):
+		do_quit.call()
+	)
+	var err = req.request(PetConfig.get_http_url("/api/system/exit"), PackedStringArray(), HTTPClient.METHOD_POST, "")
+	if err != OK:
+		do_quit.call()
+	else:
+		get_tree().create_timer(0.25).timeout.connect(func():
+			do_quit.call()
+		)
+
+func _request_create_note() -> void:
+	var req = HTTPRequest.new()
+	add_child(req)
+	req.request_completed.connect(func(_res, _code, _h, _b):
+		req.queue_free()
+	)
+	var body = JSON.stringify({
+		"title": "新建便签",
+		"content": "记录一下灵感或待办事项~📝"
+	})
+	var headers = PackedStringArray(["Content-Type: application/json"])
+	req.request(PetConfig.get_http_url("/api/notes"), headers, HTTPClient.METHOD_POST, body)
+	behavior_ctrl.request_menu_action("wave", "好的！新便签已经贴到桌面上啦~📝✨", 3.0)
+
+func _toggle_theme() -> void:
+	var next_theme = "pure" if ThemeLoader.get_theme() == "mcdonalds" else "mcdonalds"
+	var req = HTTPRequest.new()
+	add_child(req)
+	req.request_completed.connect(func(_res, _code, _h, _b):
+		req.queue_free()
+	)
+	var body = JSON.stringify({"theme": next_theme})
+	var headers = PackedStringArray(["Content-Type: application/json"])
+	req.request(PetConfig.get_http_url("/api/config/theme"), headers, HTTPClient.METHOD_POST, body)
+
+func _toggle_visibility() -> void:
+	var req = HTTPRequest.new()
+	add_child(req)
+	req.request_completed.connect(func(_res, _code, _h, _b):
+		req.queue_free()
+	)
+	req.request(PetConfig.get_http_url("/api/pet/visibility/toggle"), PackedStringArray(), HTTPClient.METHOD_POST, "")
+
 func _on_pet_clicked() -> void:
-	var quote = random_quotes[randi() % random_quotes.size()]
-	behavior_ctrl.request_user_click(quote)
 	ws_client.notify_pet_clicked()
 
 func _on_ws_connected() -> void:
-	behavior_ctrl.request_system_notice("已连接麦当劳中枢服务~🟢", 2.5)
+	pass
 
 func _on_ws_disconnected() -> void:
 	behavior_ctrl.request_system_notice("中枢服务已断开，重连中...", 2.5, true)
@@ -431,5 +186,111 @@ func _on_pet_action_received(action: String, duration: float, speech: String, _s
 func _on_pet_speech_received(text: String, duration: float) -> void:
 	behavior_ctrl.request_remote_speech(text, duration)
 
-func _on_pet_state_received(_state: Dictionary) -> void:
-	pass
+func _on_pet_state_received(state: Dictionary) -> void:
+	var is_vis = state.get("visible", true)
+	_on_visibility_changed(is_vis)
+
+func _on_theme_changed(new_theme: String) -> void:
+	ThemeLoader.set_theme(new_theme)
+	context_menu.set_theme_name(new_theme)
+	if note_mgr:
+		note_mgr.apply_theme_all()
+	var theme_msg = "已切换为【麦当劳小票】限定主题🍟" if new_theme == "mcdonalds" else "已切换为【极简纯净】办公主题📋"
+	behavior_ctrl.request_system_notice(theme_msg, 2.5)
+
+func _on_visibility_changed(is_vis: bool) -> void:
+	is_desktop_visible = is_vis
+	pet.visible = is_vis
+	speech_bubble.visible = is_vis
+	if note_mgr:
+		note_mgr.set_all_visible(is_vis)
+	update_passthrough()
+
+func _on_note_created(data: Dictionary) -> void:
+	if note_mgr:
+		note_mgr.spawn_note(data)
+
+func _on_note_archived(data: Dictionary) -> void:
+	var id = data.get("id", "")
+	if note_mgr and id != "":
+		note_mgr.remove_note(id)
+
+func _on_note_deleted(id: String) -> void:
+	if note_mgr and id != "":
+		note_mgr.remove_note(id)
+
+func _on_note_restored(data: Dictionary) -> void:
+	if note_mgr:
+		note_mgr.spawn_note(data)
+
+var _save_scale_timer: Timer = null
+
+func _on_scale_requested(new_scale: float) -> void:
+	_apply_scale_internal(new_scale, true)
+
+func _on_pet_scale_changed(new_scale: float) -> void:
+	_apply_scale_internal(new_scale, false)
+
+func _apply_scale_internal(new_scale: float, notify_server: bool) -> void:
+	new_scale = clampf(new_scale, 0.5, 2.0)
+	var rounded_scale = snappedf(new_scale, 0.05)
+	if abs(window_mgr.current_scale - rounded_scale) < 0.01:
+		return
+
+	window_mgr.apply_scale(rounded_scale, true)
+	if pet_container:
+		pet_container.scale = Vector2(rounded_scale, rounded_scale)
+	PetConfig.set_pet_scale(rounded_scale)
+	update_passthrough()
+	if notify_server:
+		_debounce_save_scale(rounded_scale)
+
+func _debounce_save_scale(_s: float) -> void:
+	if _save_scale_timer == null:
+		_save_scale_timer = Timer.new()
+		_save_scale_timer.one_shot = true
+		_save_scale_timer.wait_time = 0.35
+		add_child(_save_scale_timer)
+		_save_scale_timer.timeout.connect(func():
+			ws_client.notify_pet_scale_changed(window_mgr.current_scale)
+		)
+	_save_scale_timer.start(0.35)
+
+func update_passthrough() -> void:
+	if not is_desktop_visible:
+		DisplayServer.window_set_mouse_passthrough(PackedVector2Array([
+			Vector2(-10, -10), Vector2(-5, -10), Vector2(-5, -5), Vector2(-10, -5)
+		]))
+		return
+	
+	# Clean 8-point symmetrical contour closely matching pet sprite entity (no air wall!)
+	var pet_poly = PackedVector2Array([
+		Vector2(100, 60),
+		Vector2(220, 60),
+		Vector2(245, 120),
+		Vector2(240, 250),
+		Vector2(220, 290),
+		Vector2(100, 290),
+		Vector2(80, 250),
+		Vector2(75, 120)
+	])
+	
+	if speech_bubble and speech_bubble.visible and speech_bubble.modulate.a > 0.05:
+		var b_pos = speech_bubble.position
+		var b_size = speech_bubble.size
+		var bubble_poly = PackedVector2Array([
+			b_pos,
+			Vector2(b_pos.x + b_size.x, b_pos.y),
+			Vector2(b_pos.x + b_size.x, b_pos.y + b_size.y),
+			Vector2(b_pos.x, b_pos.y + b_size.y)
+		])
+		var merged = Geometry2D.merge_polygons(pet_poly, bubble_poly)
+		if merged.size() > 0:
+			pet_poly = merged[0]
+
+	var cur_scale = window_mgr.current_scale if window_mgr else 1.0
+	var scaled_poly = PackedVector2Array()
+	for pt in pet_poly:
+		scaled_poly.append(pt * cur_scale)
+			
+	DisplayServer.window_set_mouse_passthrough(scaled_poly)

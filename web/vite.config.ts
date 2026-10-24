@@ -1,19 +1,17 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+const DEFAULT_BACKEND_PORT = 23301;
+const backendPort = process.env.MCD_PORT || process.env.MCD_SERVER_PORT || DEFAULT_BACKEND_PORT;
+
 export default defineConfig({
   plugins: [react()],
   server: {
     port: 8080,
+    strictPort: false,
     proxy: {
-      '/mcp': {
-        target: 'https://mcp.mcd.cn',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/mcp/, '/mcp-servers/mcd-mcp'),
-        secure: true,
-      },
       '/api': {
-        target: 'http://localhost:3001',
+        target: `http://localhost:${backendPort}`,
         changeOrigin: true,
       },
     },

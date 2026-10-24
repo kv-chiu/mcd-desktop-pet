@@ -32,3 +32,7 @@ lerna-debug.log*
 
 .godot/
 *.translation
+
+# Go binaries
+/mcd-desktop-pet
+/mcd-desktop-pet.exe

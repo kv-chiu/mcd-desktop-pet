@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+"""
+mcd-desktop-pet 一体化跨平台打包脚本
+实现 Windows 单可执行文件 与 macOS 单应用包 自动化构建流水线。
+"""
 
 import sys
 import os
@@ -10,9 +14,7 @@ import argparse
 import hashlib
 import json
 import zipfile
-import tarfile
 import platform
-
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DIST_DIR = os.path.join(PROJECT_ROOT, "dist")
@@ -51,7 +53,7 @@ def run_cmd(cmd, cwd=PROJECT_ROOT, check=True, env=None):
 
 
 def get_version():
-    pkg_path = os.path.join(PROJECT_ROOT, "package.json")
+    pkg_path = os.path.join(PROJECT_ROOT, "web", "package.json")
     try:
         with open(pkg_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -84,55 +86,16 @@ def calculate_sha256(filepath):
     return sha256.hexdigest()
 
 
-
-def build_shared():
-    log("【阶段 1/5】编译跨端共享库 @mcd/shared...")
-    run_cmd(["pnpm", "-C", "shared", "build"])
-    log_success("@mcd/shared 编译完成")
-
-
 def build_web():
-    log("【阶段 2/5】构建 React 19 可视化大屏前端产物 (web/dist)...")
-    run_cmd(["pnpm", "-C", "web", "build"])
-    web_dist = os.path.join(PROJECT_ROOT, "web", "dist")
-    if not os.path.exists(os.path.join(web_dist, "index.html")):
-        log_error("Web 前端构建产物不存在 index.html")
-        sys.exit(1)
-    log_success("Web 控制台静态产物构建成功")
-
-
-def bundle_server_and_cli():
-    log("【阶段 3/5】使用 esbuild 将 server 与 cli 打包为零依赖独立 bundle...")
-    bundle_dir = os.path.join(DIST_DIR, "bundle")
-    os.makedirs(bundle_dir, exist_ok=True)
-
-    banner_arg = '--banner:js=import { createRequire as __createRequire } from "module"; const require = __createRequire(import.meta.url);'
-
-    server_entry = os.path.join(PROJECT_ROOT, "server", "src", "index.ts")
-    server_out = os.path.join(bundle_dir, "server.bundle.mjs")
-    run_cmd([
-        "npx", "esbuild", server_entry,
-        "--bundle",
-        "--platform=node",
-        "--target=node20",
-        "--format=esm",
-        banner_arg,
-        f"--outfile={server_out}"
-    ])
-
-    cli_entry = os.path.join(PROJECT_ROOT, "cli", "src", "index.ts")
-    cli_out = os.path.join(bundle_dir, "cli.bundle.mjs")
-    run_cmd([
-        "npx", "esbuild", cli_entry,
-        "--bundle",
-        "--platform=node",
-        "--target=node20",
-        "--format=esm",
-        banner_arg,
-        f"--outfile={cli_out}"
-    ])
-
-    log_success("Server 与 CLI 零依赖独立 bundle 打包完成")
+    log("【阶段 1/4】构建 React 19 可视化大屏前端产物 (web/dist)...")
+    web_dir = os.path.join(PROJECT_ROOT, "web")
+    web_dist = os.path.join(web_dir, "dist")
+    index_html = os.path.join(web_dist, "index.html")
+    if not os.path.exists(index_html):
+        run_cmd(["pnpm", "build"], cwd=web_dir)
+    else:
+        log("检测到已有 web/dist 产物，跳过重新构建（使用 --force-web 强制重建）")
+    log_success("Web 控制台静态产物就绪")
 
 
 def export_godot(target_platform, godot_bin):
@@ -141,452 +104,175 @@ def export_godot(target_platform, godot_bin):
     os.makedirs(dist_desktop, exist_ok=True)
 
     if not godot_bin:
-        log_warn("未检测到 Godot 4 引擎，无法导出桌宠客户端；仅打包服务时可显式使用 --skip-godot")
-        return False
+        log_warn("未检测到 Godot 4 引擎，将跳过内嵌桌面导出产物")
+        return None
 
-    log(f"使用 Godot 导出 [{target_platform}] 桌面宠物客户端...")
+    log(f"【阶段 2/4】使用 Godot 导出 [{target_platform}] 桌面宠物客户端...")
 
     if target_platform == "windows":
-        out_path = os.path.join(dist_desktop, "windows", "McdDesktopPet.exe")
+        out_path = os.path.join(dist_desktop, "windows", "mcd-pet-runtime.exe")
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         ok = run_cmd([godot_bin, "--headless", "--path", desktop_dir, "--export-release", "Windows Desktop", out_path], check=False)
-        return ok and os.path.exists(out_path)
+        return out_path if ok and os.path.exists(out_path) else None
 
     elif target_platform == "macos":
         out_zip = os.path.join(dist_desktop, "macos", "McdDesktopPet.zip")
         os.makedirs(os.path.dirname(out_zip), exist_ok=True)
         ok = run_cmd([godot_bin, "--headless", "--path", desktop_dir, "--export-release", "macOS", out_zip], check=False)
         if ok and os.path.exists(out_zip):
-            app_dir = os.path.join(dist_desktop, "macos", "McdDesktopPet.app")
+            app_dir = os.path.join(dist_desktop, "macos", "mcd-pet-runtime.app")
             if os.path.exists(app_dir):
                 shutil.rmtree(app_dir)
             with zipfile.ZipFile(out_zip, 'r') as zf:
                 zf.extractall(os.path.dirname(out_zip))
-                for info in zf.infolist():
-                    mode = (info.external_attr >> 16) & 0o777
-                    if mode:
-                        os.chmod(os.path.join(os.path.dirname(out_zip), info.filename), mode)
-            return os.path.exists(app_dir)
-        return False
+            return app_dir
+        return None
 
-    elif target_platform == "linux":
-        out_path = os.path.join(dist_desktop, "linux", "McdDesktopPet.x86_64")
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        ok = run_cmd([godot_bin, "--headless", "--path", desktop_dir, "--export-release", "Linux", out_path], check=False)
-        return ok and os.path.exists(out_path)
-
-    return False
+    return None
 
 
+def build_go_binary(target_os, target_arch, output_path):
+    log(f"【阶段 3/4】编译 Go 一体化主程序 ({target_os}/{target_arch})...")
+    env = {
+        "GOOS": target_os,
+        "GOARCH": target_arch,
+        "CGO_ENABLED": "0",
+    }
+    run_cmd(["go", "build", "-trimpath", "-ldflags", "-s -w", "-o", output_path, "./cmd/mcd-desktop-pet"], env=env)
+    if not os.path.exists(output_path):
+        log_error(f"Go 二进制编译失败: {output_path}")
+        sys.exit(1)
+    log_success(f"Go 二进制编译完成: {output_path}")
 
-START_SH_TEMPLATE = """#!/usr/bin/env bash
-set -e
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$DIR"
 
-echo "======================================================"
-echo "🍔 启动麦当劳桌宠系统 (McDonald's Desktop Pet)"
-echo "======================================================"
+def package_macos_app(go_binary_path, output_app_path, version):
+    log(f"封装 macOS 单应用包: {output_app_path}...")
+    macos_dir = os.path.join(output_app_path, "Contents", "MacOS")
+    resources_dir = os.path.join(output_app_path, "Contents", "Resources")
+    os.makedirs(macos_dir, exist_ok=True)
+    os.makedirs(resources_dir, exist_ok=True)
 
-if ! command -v node >/dev/null 2>&1; then
-  echo "❌ 错误: 未检测到 Node.js 运行环境！"
-  echo "💡 提示: 请先安装 Node.js (推荐 LTS 版本: https://nodejs.org)，安装后双击即可直接运行。"
-  exit 1
-fi
+    dest_bin = os.path.join(macos_dir, "mcd-desktop-pet")
+    shutil.copy2(go_binary_path, dest_bin)
+    os.chmod(dest_bin, 0o755)
 
-export MCD_WEB_DIR="$DIR/server/web"
-echo "🚀 正在启动中枢服务 (Port: 3001)..."
-node "$DIR/server/server.bundle.mjs" > "$DIR/server.log" 2>&1 &
-SERVER_PID=$!
-echo "$SERVER_PID" > "$DIR/.server.pid"
-echo "✅ 中枢服务已在后台运行 (PID: $SERVER_PID)"
+    for icon_name in ["icon.icns", "icon.png", "icon.svg"]:
+        icon_path = os.path.join(PROJECT_ROOT, "desktop", icon_name)
+        if os.path.exists(icon_path):
+            shutil.copy2(icon_path, os.path.join(resources_dir, icon_name))
 
-sleep 1.2
-
-if [ -d "$DIR/McdDesktopPet.app" ]; then
-  echo "🐾 正在唤起桌面宠物 (macOS)..."
-  open "$DIR/McdDesktopPet.app"
-elif [ -f "$DIR/McdDesktopPet.x86_64" ]; then
-  echo "🐾 正在唤起桌面宠物 (Linux)..."
-  chmod +x "$DIR/McdDesktopPet.x86_64"
-  "$DIR/McdDesktopPet.x86_64" >/dev/null 2>&1 &
-fi
-
-echo "🌐 正在打开 Web 控制大屏: http://localhost:3001"
-if command -v open >/dev/null 2>&1; then
-  open "http://localhost:3001"
-elif command -v xdg-open >/dev/null 2>&1; then
-  xdg-open "http://localhost:3001"
-fi
-
-echo "======================================================"
-echo "🎉 麦当劳桌宠系统已全面就绪！"
-echo "💡 如需停止服务，请直接运行 ./stop.sh"
-echo "======================================================"
+    plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>mcd-desktop-pet</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.mcd.desktoppet</string>
+    <key>CFBundleName</key>
+    <string>mcd-desktop-pet</string>
+    <key>CFBundleDisplayName</key>
+    <string>麦当劳便利贴桌宠</string>
+    <key>CFBundleIconFile</key>
+    <string>icon</string>
+    <key>CFBundleVersion</key>
+    <string>{version}</string>
+    <key>CFBundleShortVersionString</key>
+    <string>{version}</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>11.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+</dict>
+</plist>
 """
+    with open(os.path.join(output_app_path, "Contents", "Info.plist"), "w", encoding="utf-8") as f:
+        f.write(plist_content)
 
-STOP_SH_TEMPLATE = """#!/usr/bin/env bash
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$DIR"
-
-echo "🛑 正在停止麦当劳桌宠及中枢服务..."
-
-if [ -f "$DIR/.server.pid" ]; then
-  PID=$(cat "$DIR/.server.pid")
-  if kill -0 "$PID" 2>/dev/null; then
-    kill "$PID" 2>/dev/null || true
-    echo "✅ 已停止中枢服务进程 (PID: $PID)"
-  fi
-  rm -f "$DIR/.server.pid"
-fi
-
-pkill -f "McdDesktopPet" 2>/dev/null || true
-echo "✅ 麦当劳桌宠与中枢服务已全部停止。"
-"""
-
-START_BAT_TEMPLATE = """@echo off
-chcp 65001 >nul
-setlocal
-cd /d "%~dp0"
-
-echo ======================================================
-echo 🍔 启动麦当劳桌宠系统 (McDonald's Desktop Pet)
-echo ======================================================
-
-where node >nul 2>nul
-if %errorlevel% neq 0 (
-    echo ❌ 错误: 未检测到 Node.js 运行环境！
-    echo 💡 提示: 请前往 https://nodejs.org 下载安装 Node.js (推荐 LTS 版本) 后再次双击运行。
-    pause
-    exit /b 1
-)
-
-set MCD_WEB_DIR=%~dp0server\\web
-
-echo 🚀 正在启动中枢服务 (Port: 3001)...
-start /b "" node "%~dp0server\\server.bundle.mjs" > "%~dp0server.log" 2>&1
-
-timeout /t 2 /nobreak >nul
-
-if exist "%~dp0McdDesktopPet.exe" (
-    echo 🐾 正在唤起桌面宠物客户端...
-    start "" "%~dp0McdDesktopPet.exe"
-)
-
-echo 🌐 正在打开 Web 控制大屏...
-start http://localhost:3001
-
-echo ======================================================
-echo 🎉 麦当劳桌宠系统已全面就绪！
-echo 💡 如需退出，请双击运行 stop.bat
-echo ======================================================
-"""
-
-STOP_BAT_TEMPLATE = """@echo off
-chcp 65001 >nul
-setlocal
-echo 🛑 正在停止麦当劳桌宠及中枢服务...
-
-taskkill /F /IM McdDesktopPet.exe >nul 2>nul
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3001') do (
-    taskkill /F /PID %%a >nul 2>nul
-)
-
-echo ✅ 麦当劳桌宠与中枢服务已全部停止。
-"""
-
-README_TEMPLATE = """# 🍔 麦当劳智能桌面宠物 (McDonald's Desktop Pet) - 开箱即用版
-
-欢迎使用麦当劳智能桌面宠物！本发布包为开箱即用免环境配置版本。
-
----
-
-## 🚀 极速开箱使用方式
-
-### 方式一：一键双击启动（普通用户首选）
-
-* **macOS / Linux 用户**：
-  在终端或双击运行 `./start.sh`，系统将自动拉起中枢服务、唤醒桌面宠物并在浏览器打开控制台。
-  如需停止，运行 `./stop.sh` 即可。
-* **Windows 用户**：
-  直接双击 `start.bat` 即可一键启动；关闭时双击 `stop.bat`。
-
----
-
-### 方式二：AI Agent / Skill 即用（开发者与 Agent 用户）
-
-如果您使用 **Claude Code**、**Cursor**、**Antigravity** 等大模型 Agent，可直接将包内的 `skill/` 目录导入您的 Agent 技能库中：
-
-1. **环境自检与引导配置 Token**：
-   ```bash
-   python3 skill/scripts/install.py --token "你的麦当劳Token"
-   ```
-2. **通过 Agent 自然语言或命令行控制桌宠与麦当劳工具**：
-   ```bash
-   # 驱动桌宠动作与说话
-   python3 skill/scripts/control.py pet --action wave --speech "主人下午好！"
-   
-   # 查询麦当劳餐品营养热量
-   python3 skill/scripts/control.py tool --name list-nutrition-foods --params '{"keyword":"巨无霸"}'
-   
-   # 一键领取可用优惠券
-   python3 skill/scripts/control.py tool --name auto-bind-coupons
-   ```
-
----
-
-## 📦 目录结构说明
-
-```text
-├── McdDesktopPet(.app/.exe)   # Godot 4.x 桌面宠物客户端本体 (原生透明窗口)
-├── server/                    # 零依赖内置中枢服务
-│   ├── server.bundle.mjs      # 单文件全量中枢后端
-│   ├── cli.bundle.mjs         # 单文件命令行控制工具
-│   └── web/                   # React 19 可视化大屏前端静态资源 (由 server 直接托管)
-├── skill/                     # AI Agent 扩展技能包
-│   ├── SKILL.md               # 技能规范与 Agent 提示词描述
-│   └── scripts/
-│       ├── install.py         # 智能安装与环境自检
-│       └── control.py         # 统一控制中枢
-├── start.sh / start.bat       # 一键启动脚本
-├── stop.sh / stop.bat         # 一键停止脚本
-└── README.md                  # 本说明文档
-```
-"""
+    log_success("macOS 单应用包封装完成")
 
 
-
-def assemble_platform_package(target_platform, version):
-    pkg_name = f"mcd-desktop-pet-{target_platform}-v{version}"
-    pkg_dir = os.path.join(RELEASE_DIR, pkg_name)
-
-    if os.path.exists(pkg_dir):
-        shutil.rmtree(pkg_dir)
-    os.makedirs(pkg_dir, exist_ok=True)
-
-    log(f"组装发布包: {pkg_name} ...")
-
-    server_dest = os.path.join(pkg_dir, "server")
-    os.makedirs(server_dest, exist_ok=True)
-
-    shutil.copy2(
-        os.path.join(DIST_DIR, "bundle", "server.bundle.mjs"),
-        os.path.join(server_dest, "server.bundle.mjs")
-    )
-    shutil.copy2(
-        os.path.join(DIST_DIR, "bundle", "cli.bundle.mjs"),
-        os.path.join(server_dest, "cli.bundle.mjs")
-    )
-
-    web_dest = os.path.join(server_dest, "web")
-    shutil.copytree(os.path.join(PROJECT_ROOT, "web", "dist"), web_dest)
-
-    skill_dest = os.path.join(pkg_dir, "skill")
-    shutil.copytree(os.path.join(PROJECT_ROOT, "skill"), skill_dest)
-
-    dist_desktop = os.path.join(DIST_DIR, "desktop")
-    if target_platform == "macos":
-        app_src = os.path.join(dist_desktop, "macos", "McdDesktopPet.app")
-        if os.path.exists(app_src):
-            shutil.copytree(app_src, os.path.join(pkg_dir, "McdDesktopPet.app"), symlinks=True)
-        else:
-            log_warn(f"未在 {app_src} 找到 macOS 桌宠客户端产物")
-
-    elif target_platform == "windows":
-        exe_src = os.path.join(dist_desktop, "windows", "McdDesktopPet.exe")
-        if os.path.exists(exe_src):
-            shutil.copy2(exe_src, os.path.join(pkg_dir, "McdDesktopPet.exe"))
-        else:
-            log_warn(f"未在 {exe_src} 找到 Windows 桌宠客户端产物")
-
-    elif target_platform == "linux":
-        bin_src = os.path.join(dist_desktop, "linux", "McdDesktopPet.x86_64")
-        if os.path.exists(bin_src):
-            shutil.copy2(bin_src, os.path.join(pkg_dir, "McdDesktopPet.x86_64"))
-            os.chmod(os.path.join(pkg_dir, "McdDesktopPet.x86_64"), 0o755)
-        else:
-            log_warn(f"未在 {bin_src} 找到 Linux 桌宠客户端产物")
-
-    if target_platform in ("macos", "linux"):
-        mcd_sh = os.path.join(pkg_dir, "mcd")
-        with open(mcd_sh, "w", encoding="utf-8") as f:
-            f.write("#!/usr/bin/env bash\nDIR=\"$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\"\nexec node \"$DIR/server/cli.bundle.mjs\" \"$@\"\n")
-        os.chmod(mcd_sh, 0o755)
-
-        start_sh = os.path.join(pkg_dir, "start.sh")
-        with open(start_sh, "w", encoding="utf-8") as f:
-            f.write(START_SH_TEMPLATE)
-        os.chmod(start_sh, 0o755)
-
-        stop_sh = os.path.join(pkg_dir, "stop.sh")
-        with open(stop_sh, "w", encoding="utf-8") as f:
-            f.write(STOP_SH_TEMPLATE)
-        os.chmod(stop_sh, 0o755)
-
-    if target_platform == "windows":
-        with open(os.path.join(pkg_dir, "mcd.bat"), "w", encoding="utf-8") as f:
-            f.write("@echo off\r\nnode \"%~dp0server\\cli.bundle.mjs\" %*\r\n")
-        with open(os.path.join(pkg_dir, "start.bat"), "w", encoding="utf-8") as f:
-            f.write(START_BAT_TEMPLATE)
-        with open(os.path.join(pkg_dir, "stop.bat"), "w", encoding="utf-8") as f:
-            f.write(STOP_BAT_TEMPLATE)
-
-    with open(os.path.join(pkg_dir, "README.md"), "w", encoding="utf-8") as f:
-        f.write(README_TEMPLATE)
-
-    log_success(f"发布包组装完成: {pkg_dir}")
-    return pkg_dir
-
-
-def assemble_standalone_skill(version):
-    pkg_name = f"mcd-desktop-pet-skill-v{version}"
-    pkg_dir = os.path.join(RELEASE_DIR, pkg_name)
-
-    if os.path.exists(pkg_dir):
-        shutil.rmtree(pkg_dir)
-    os.makedirs(pkg_dir, exist_ok=True)
-
-    log(f"组装独立 Agent Skill 技能包: {pkg_name} ...")
-    shutil.copy2(os.path.join(PROJECT_ROOT, "skill", "SKILL.md"), os.path.join(pkg_dir, "SKILL.md"))
-
-    scripts_dest = os.path.join(pkg_dir, "scripts")
-    shutil.copytree(os.path.join(PROJECT_ROOT, "skill", "scripts"), scripts_dest)
-
-    skill_readme = """# 麦当劳桌面宠物 & MCP Agent 技能包
-
-本技能包专为 AI Agent（Claude Code、Antigravity、Cursor、Codex 等）设计。
-
-## 安装与快速使用
-1. 将此目录整体复制到您的 AI Agent skills 目录下。
-2. 运行环境自检与引导配置：
-   ```bash
-   python3 scripts/install.py --token <麦当劳Token>
-   ```
-3. 通过自然语言或 `scripts/control.py` 操控麦当劳工具与桌宠。
-"""
-    with open(os.path.join(pkg_dir, "README.md"), "w", encoding="utf-8") as f:
-        f.write(skill_readme)
-
-    log_success(f"独立 Agent Skill 技能包组装完成: {pkg_dir}")
-    return pkg_dir
-
-
-def create_archive(source_dir, format_type):
-    base_name = os.path.basename(source_dir)
-    parent_dir = os.path.dirname(source_dir)
-
-    if format_type == "zip":
-        archive_path = os.path.join(parent_dir, f"{base_name}.zip")
-        log(f"正在压缩生成: {os.path.basename(archive_path)} ...")
-        with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zf:
-            for root, dirs, files in os.walk(source_dir):
-                for file in files:
-                    full_path = os.path.join(root, file)
-                    rel_path = os.path.relpath(full_path, parent_dir)
-                    zf.write(full_path, rel_path)
-        log_success(f"压缩完成: {archive_path}")
-        return archive_path
-
-    elif format_type == "tar.gz":
-        archive_path = os.path.join(parent_dir, f"{base_name}.tar.gz")
-        log(f"正在压缩生成: {os.path.basename(archive_path)} ...")
-        with tarfile.open(archive_path, "w:gz") as tar:
-            tar.add(source_dir, arcname=base_name)
-        log_success(f"压缩完成: {archive_path}")
-        return archive_path
-
+def make_zip(source_dir, output_zip):
+    with zipfile.ZipFile(output_zip, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for root, _, files in os.walk(source_dir):
+            for file in files:
+                abs_path = os.path.join(root, file)
+                rel_path = os.path.relpath(abs_path, source_dir)
+                zf.write(abs_path, rel_path)
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="🍔 麦当劳桌宠发布打包脚本 (McDonald's Pet Build & Release Automation)"
-    )
-    parser.add_argument(
-        "--platform",
-        choices=["all", "windows", "macos", "linux", "current"],
-        default="current",
-        help="目标打包平台 (默认: 当前操作系统)"
-    )
-    parser.add_argument("--skip-godot", action="store_true", help="跳过 Godot 客户端导出步骤")
-    parser.add_argument("--skip-web", action="store_true", help="跳过 Web 前端构建步骤")
-    parser.add_argument("--skip-bundle", action="store_true", help="跳过 esbuild 单文件打包步骤")
-    parser.add_argument("--create-archives", action="store_true", default=True, help="生成最终压缩包 (.zip / .tar.gz)")
-    parser.add_argument("--clean", action="store_true", help="打包前清理 dist/release 目录")
-
+    parser = argparse.ArgumentParser(description="mcd-desktop-pet 跨平台发布构建流水线")
+    parser.add_argument("--platform", choices=["all", "windows", "macos"], default="all", help="构建目标平台")
+    parser.add_argument("--skip-godot", action="store_true", help="跳过 Godot 导出")
+    parser.add_argument("--force-web", action="store_true", help="强制重新构建前端")
     args = parser.parse_args()
 
     version = get_version()
-    print("=" * 65)
-    print(f"🍔 麦当劳智能桌面宠物 发布构建系统 v{version}")
-    print("=" * 65)
+    godot_bin = None if args.skip_godot else find_godot_executable()
 
-    if args.clean and os.path.exists(RELEASE_DIR):
-        log(f"清理历史发布产物: {RELEASE_DIR}")
-        shutil.rmtree(RELEASE_DIR)
     os.makedirs(RELEASE_DIR, exist_ok=True)
+    temp_build_dir = os.path.join(DIST_DIR, "temp_build")
+    if os.path.exists(temp_build_dir):
+        shutil.rmtree(temp_build_dir)
+    os.makedirs(temp_build_dir, exist_ok=True)
 
-    current_sys = platform.system().lower()
-    if args.platform == "current":
-        if "darwin" in current_sys:
-            target_platforms = ["macos"]
-        elif "windows" in current_sys:
-            target_platforms = ["windows"]
-        else:
-            target_platforms = ["linux"]
-    elif args.platform == "all":
-        target_platforms = ["windows", "macos", "linux"]
-    else:
-        target_platforms = [args.platform]
+    if args.force_web:
+        web_dist = os.path.join(PROJECT_ROOT, "web", "dist")
+        if os.path.exists(web_dist):
+            shutil.rmtree(web_dist)
 
-    log(f"本次构建目标平台: {', '.join(target_platforms)}")
+    build_web()
 
-    build_shared()
+    targets = ["windows", "macos"] if args.platform == "all" else [args.platform]
+    checksums = {}
 
-    if not args.skip_web:
-        build_web()
+    for target in targets:
+        if target == "windows":
+            exe_name = "mcd-desktop-pet.exe"
+            go_out = os.path.join(temp_build_dir, exe_name)
+            build_go_binary("windows", "amd64", go_out)
 
-    if not args.skip_bundle:
-        bundle_server_and_cli()
+            win_dir = os.path.join(temp_build_dir, "windows_pkg")
+            os.makedirs(win_dir, exist_ok=True)
+            shutil.copy2(go_out, os.path.join(win_dir, exe_name))
 
-    godot_bin = find_godot_executable()
-    if not args.skip_godot:
-        for p in target_platforms:
-            if not export_godot(p, godot_bin):
-                log_error(f"[{p}] Godot 导出失败，停止发布，避免生成缺少桌宠客户端的安装包")
-                sys.exit(1)
+            zip_name = f"mcd-desktop-pet-v{version}-windows-x64.zip"
+            zip_path = os.path.join(RELEASE_DIR, zip_name)
+            make_zip(win_dir, zip_path)
+            checksums[zip_name] = calculate_sha256(zip_path)
+            log_success(f"Windows 发行包生成: {zip_path}")
 
-    log("【阶段 4/5】组装多端开箱即用发布分发目录...")
-    assembled_dirs = []
-    for p in target_platforms:
-        d = assemble_platform_package(p, version)
-        assembled_dirs.append((p, d))
+        elif target == "macos":
+            for arch in ["arm64", "amd64"]:
+                go_out = os.path.join(temp_build_dir, f"mcd-desktop-pet-darwin-{arch}")
+                build_go_binary("darwin", arch, go_out)
 
-    skill_dir = assemble_standalone_skill(version)
+                mac_pkg_dir = os.path.join(temp_build_dir, f"macos_{arch}_pkg")
+                os.makedirs(mac_pkg_dir, exist_ok=True)
+                app_path = os.path.join(mac_pkg_dir, "mcd-desktop-pet.app")
+                package_macos_app(go_out, app_path, version)
 
-    log("【阶段 5/5】生成压缩包与 SHA-256 校验和清单...")
-    archives = []
-    for p, d in assembled_dirs:
-        fmt = "zip" if p in ("windows", "macos") else "tar.gz"
-        arc = create_archive(d, fmt)
-        archives.append(arc)
+                zip_name = f"mcd-desktop-pet-v{version}-macos-{arch}.zip"
+                zip_path = os.path.join(RELEASE_DIR, zip_name)
+                make_zip(mac_pkg_dir, zip_path)
+                checksums[zip_name] = calculate_sha256(zip_path)
+                log_success(f"macOS ({arch}) 发行包生成: {zip_path}")
 
-    skill_arc = create_archive(skill_dir, "zip")
-    archives.append(skill_arc)
-
-    checksum_file = os.path.join(RELEASE_DIR, "checksums.sha256")
-    with open(checksum_file, "w", encoding="utf-8") as f:
-        for arc in archives:
-            sha = calculate_sha256(arc)
-            fname = os.path.basename(arc)
+    # Generate SHA256SUMS.txt
+    sha_file = os.path.join(RELEASE_DIR, "SHA256SUMS.txt")
+    with open(sha_file, "w", encoding="utf-8") as f:
+        for fname, sha in checksums.items():
             f.write(f"{sha}  {fname}\n")
-            print(f"  🔑 {fname} -> {sha}")
+    log_success(f"【阶段 4/4】生成校验和文件: {sha_file}")
 
-    print("\n" + "=" * 65)
-    log_success("🎉 所有发布包构建打包完成！产物位于 dist/release:")
-    for arc in archives:
-        print(f"  📦 {os.path.basename(arc)} ({os.path.getsize(arc) / (1024*1024):.2f} MB)")
-    print(f"  📄 校验清单: {os.path.basename(checksum_file)}")
-    print("=" * 65 + "\n")
+    print("\n" + "=" * 60)
+    log_success(f"🎉 全部发布产物构建完成！版本: v{version}")
+    for fname, sha in checksums.items():
+        print(f"  📦 {fname} (SHA-256: {sha[:12]}...)")
+    print("=" * 60)
 
 
 if __name__ == "__main__":

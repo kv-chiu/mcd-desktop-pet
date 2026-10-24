@@ -13,7 +13,8 @@ import urllib.error
 import subprocess
 
 CONFIG_FILE = os.path.expanduser("~/.mcd-desktop-pet/config.json")
-DEFAULT_PORT = 3001
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 23301
 
 class Colors:
     HEADER = '\033[95m'
@@ -107,6 +108,15 @@ SCENARIO_STEPS = [
 ]
 
 def get_server_port() -> int:
+    port_file = os.path.expanduser("~/.mcd-desktop-pet/run/server.port")
+    if os.path.exists(port_file):
+        try:
+            with open(port_file, "r", encoding="utf-8") as f:
+                p = int(f.read().strip())
+                if p > 0:
+                    return p
+        except Exception:
+            pass
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
@@ -132,8 +142,8 @@ def get_lunch_config() -> tuple:
             pass
     return time_str, advance_min
 
-def check_server_status(port: int) -> bool:
-    url = f"http://127.0.0.1:{port}/api/health"
+def check_server_status(port: int, host: str = DEFAULT_HOST) -> bool:
+    url = f"http://{host}:{port}/api/health"
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "mcd-mock-tester/1.0"})
         with urllib.request.urlopen(req, timeout=2.0) as resp:
@@ -141,8 +151,8 @@ def check_server_status(port: int) -> bool:
     except Exception:
         return False
 
-def http_post(port: int, path: str, payload: dict) -> dict:
-    url = f"http://127.0.0.1:{port}{path}"
+def http_post(port: int, path: str, payload: dict, host: str = DEFAULT_HOST) -> dict:
+    url = f"http://{host}:{port}{path}"
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url,
@@ -261,7 +271,7 @@ def main():
   python3 scripts/mock-lunch-scenario.py --phase 2 # 仅测试第 2 步 (优惠券两阶段推荐与领券)
 """
     )
-    parser.add_argument("-p", "--port", type=int, help="中枢服务端口 (默认读取本地配置或 3001)")
+    parser.add_argument("-p", "--port", type=int, help="中枢服务端口 (默认读取本地配置或 23301)")
     parser.add_argument("-w", "--wait", type=float, default=5.0, help="启动前倒计时等待秒数 (默认 5.0 秒，设为 0 可直接启动)")
     parser.add_argument("-d", "--delay", type=float, default=4.0, help="步骤之间自动等待秒数 (默认 4.0)")
     parser.add_argument("-s", "--step", action="store_true", help="交互式单步执行模式 (按回车进入下一步)")
@@ -284,14 +294,13 @@ def main():
     if not check_server_status(port):
         if args.auto_start:
             if not auto_start_server(port):
-                print(colored(f"❌ 无法连接到桌宠中枢服务 (http://127.0.0.1:{port})，自动启动失败！", Colors.RED))
+                print(colored(f"❌ 无法连接到桌宠中枢服务 (http://{DEFAULT_HOST}:{port})，自动启动失败！", Colors.RED))
                 sys.exit(1)
         else:
             print(colored(f"❌ 未检测到正在运行的桌宠中枢服务 (端口 {port})", Colors.RED))
             print(colored("\n💡 请先启动中枢服务后再运行本测试脚本：", Colors.YELLOW))
-            print(colored("   方式 1: 在根目录下执行  pnpm dev:server", Colors.CYAN))
-            print(colored("   方式 2: 使用 CLI 启动   mcd start", Colors.CYAN))
-            print(colored("   方式 3: 加上自动启动参数 python3 scripts/mock-lunch-scenario.py --auto-start", Colors.CYAN))
+            print(colored("   方式 1: 使用 CLI 启动   mcd-desktop-pet start", Colors.CYAN))
+            print(colored("   方式 2: 加上自动启动参数 python3 scripts/mock-lunch-scenario.py --auto-start", Colors.CYAN))
             print(colored("\n（此时若 Godot 桌宠客户端已启动，会实时看到小宝弹出气泡并做出对应动作）\n", Colors.DIM))
             sys.exit(1)
 

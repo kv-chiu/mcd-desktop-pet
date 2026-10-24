@@ -120,7 +120,7 @@ Web 请求头中的 Token 优先于中枢 Token。中枢先读取环境变量默
 也可在已设置 `MCD_MCP_TOKEN` 的 macOS / Linux 终端中，直接请求本机通用工具入口：
 
 ```bash
-curl --fail-with-body http://localhost:3001/api/tools/list-nutrition-foods \
+curl --fail-with-body http://localhost:23301/api/tools/list-nutrition-foods \
   -H "Authorization: Bearer ${MCD_MCP_TOKEN:?请先设置 MCD_MCP_TOKEN}" \
   -H 'Content-Type: application/json' \
   --data '{"keyword":"巨无霸"}'

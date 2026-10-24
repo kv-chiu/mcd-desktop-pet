@@ -1,6 +1,7 @@
 class_name SpeechBubble
 extends Control
 
+signal bubble_opened
 signal bubble_closed
 
 @onready var panel: PanelContainer = $PanelContainer
@@ -31,6 +32,7 @@ func show_speech(text: String, duration: float = 4.0) -> void:
 
 	timer.wait_time = max(1.5, duration)
 	timer.start()
+	bubble_opened.emit()
 
 func hide_speech() -> void:
 	timer.stop()

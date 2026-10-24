@@ -6,11 +6,19 @@ signal disconnected
 signal pet_action_received(action: String, duration: float, speech: String, sound: String)
 signal pet_speech_received(text: String, duration: float)
 signal pet_state_received(state: Dictionary)
+signal theme_changed(theme: String)
+signal pet_scale_changed(scale: float)
+signal visibility_changed(visible: bool)
+signal note_created(data: Dictionary)
+signal note_updated(data: Dictionary)
+signal note_archived(data: Dictionary)
+signal note_deleted(id: String)
+signal note_restored(data: Dictionary)
 
 var socket: WebSocketPeer = WebSocketPeer.new()
 var is_socket_connected: bool = false
 var reconnect_timer: float = 0.0
-var server_url: String = "ws://127.0.0.1:3001/ws"
+var server_url: String = PetConfig.get_ws_url()
 
 func _ready() -> void:
 	connect_to_server()
@@ -85,6 +93,16 @@ func notify_lunch_time_changed(new_time: String, enabled: bool, advance_min: int
 	}
 	send_dict(msg)
 
+func notify_pet_scale_changed(new_scale: float) -> void:
+	var http = HTTPRequest.new()
+	add_child(http)
+	http.request_completed.connect(func(_res, _code, _h, _b):
+		http.queue_free()
+	)
+	var body = JSON.stringify({"scale": new_scale})
+	var headers = PackedStringArray(["Content-Type: application/json"])
+	http.request(PetConfig.get_http_url("/api/config/scale"), headers, HTTPClient.METHOD_POST, body)
+
 func _handle_message(raw_json: String) -> void:
 	var json = JSON.new()
 	var err = json.parse(raw_json)
@@ -100,6 +118,54 @@ func _handle_message(raw_json: String) -> void:
 	var payload = data.get("payload", {})
 
 	match msg_type:
+		"init":
+			if typeof(payload) == TYPE_DICTIONARY:
+				var t = payload.get("theme", "mcdonalds")
+				theme_changed.emit(t)
+				var ps = payload.get("pet_state", {})
+				if typeof(ps) == TYPE_DICTIONARY:
+					pet_state_received.emit(ps)
+				var sc = payload.get("pet_scale", payload.get("scale", 1.0))
+				if typeof(sc) in [TYPE_INT, TYPE_FLOAT] and float(sc) > 0.0:
+					pet_scale_changed.emit(float(sc))
+
+		"THEME_CHANGED":
+			if typeof(payload) == TYPE_DICTIONARY:
+				var t = payload.get("theme", "mcdonalds")
+				theme_changed.emit(t)
+
+		"PET_SCALE_CHANGED":
+			if typeof(payload) == TYPE_DICTIONARY:
+				var sc = payload.get("scale", payload.get("pet_scale", 1.0))
+				if typeof(sc) in [TYPE_INT, TYPE_FLOAT] and float(sc) > 0.0:
+					pet_scale_changed.emit(float(sc))
+
+		"visibility_changed":
+			if typeof(payload) == TYPE_DICTIONARY:
+				var v = payload.get("visible", true)
+				visibility_changed.emit(v)
+
+		"note_created":
+			if typeof(payload) == TYPE_DICTIONARY:
+				note_created.emit(payload)
+
+		"note_updated":
+			if typeof(payload) == TYPE_DICTIONARY:
+				note_updated.emit(payload)
+
+		"note_archived":
+			if typeof(payload) == TYPE_DICTIONARY:
+				note_archived.emit(payload)
+
+		"note_deleted":
+			if typeof(payload) == TYPE_DICTIONARY:
+				var id = payload.get("id", "")
+				note_deleted.emit(id)
+
+		"note_restored":
+			if typeof(payload) == TYPE_DICTIONARY:
+				note_restored.emit(payload)
+
 		"pet_action":
 			var action = payload.get("action", "idle")
 			var duration = float(payload.get("duration", 3.0))

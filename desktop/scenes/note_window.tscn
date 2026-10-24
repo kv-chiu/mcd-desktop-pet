@@ -1,0 +1,240 @@
+[gd_scene format=3 uid="uid://bm8e12note01"]
+
+[ext_resource type="Script" path="res://scripts/note_window.gd" id="1_note"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_stamp"]
+bg_color = Color(1, 1, 1, 0)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.854902, 0.160784, 0.109804, 1)
+corner_radius_top_left = 36
+corner_radius_top_right = 36
+corner_radius_bottom_left = 36
+corner_radius_bottom_right = 36
+
+[node name="NoteWindow" type="Window"]
+transparent_bg = true
+size = Vector2i(280, 320)
+borderless = true
+always_on_top = true
+transparent = true
+unresizable = true
+min_size = Vector2i(200, 200)
+max_size = Vector2i(600, 800)
+script = ExtResource("1_note")
+
+[node name="RootControl" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelBg" type="Panel" parent="RootControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HeaderBar" type="Control" parent="RootControl"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 36.0
+grow_horizontal = 2
+
+[node name="OrderLabel" type="Label" parent="RootControl/HeaderBar"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 12.0
+offset_top = -12.0
+offset_right = 52.0
+offset_bottom = 12.0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 13
+text = "#042"
+vertical_alignment = 1
+
+[node name="TitleLabel" type="Label" parent="RootControl/HeaderBar"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 56.0
+offset_top = -12.0
+offset_right = 160.0
+offset_bottom = 12.0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_font_sizes/font_size = 12
+text = "便利贴"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="PinButton" type="Button" parent="RootControl/HeaderBar"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -80.0
+offset_top = -12.0
+offset_right = -56.0
+offset_bottom = 12.0
+grow_horizontal = 0
+grow_vertical = 2
+focus_mode = 0
+text = "📍"
+flat = true
+
+[node name="ArchiveButton" type="Button" parent="RootControl/HeaderBar"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -52.0
+offset_top = -12.0
+offset_right = -28.0
+offset_bottom = 12.0
+grow_horizontal = 0
+grow_vertical = 2
+focus_mode = 0
+text = "✓"
+flat = true
+
+[node name="CloseButton" type="Button" parent="RootControl/HeaderBar"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -26.0
+offset_top = -12.0
+offset_right = -6.0
+offset_bottom = 12.0
+grow_horizontal = 0
+grow_vertical = 2
+focus_mode = 0
+text = "✕"
+flat = true
+
+[node name="BodyContainer" type="VBoxContainer" parent="RootControl"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 38.0
+offset_right = -10.0
+offset_bottom = -26.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextEdit" type="TextEdit" parent="RootControl/BodyContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+wrap_mode = 1
+
+[node name="MediaContainer" type="VBoxContainer" parent="RootControl/BodyContainer"]
+layout_mode = 2
+
+[node name="FooterBar" type="Control" parent="RootControl"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -24.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="BarcodeRect" type="ColorRect" parent="RootControl/FooterBar"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 12.0
+offset_top = -3.0
+offset_right = 92.0
+offset_bottom = 3.0
+grow_vertical = 2
+color = Color(0.407843, 0.392157, 0.368627, 0.5)
+
+[node name="ResizeHandle" type="Control" parent="RootControl/FooterBar"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -16.0
+offset_top = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_default_cursor_shape = 12
+
+[node name="HandleIcon" type="Label" parent="RootControl/FooterBar/ResizeHandle"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.6, 0.6)
+theme_override_font_sizes/font_size = 10
+text = "◢"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="StampOverlay" type="Control" parent="RootControl"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -60.0
+offset_top = -60.0
+offset_right = 60.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(60, 60)
+mouse_filter = 2
+
+[node name="StampPanel" type="Panel" parent="RootControl/StampOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_stamp")
+
+[node name="StampLabel" type="Label" parent="RootControl/StampOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.854902, 0.160784, 0.109804, 1)
+theme_override_font_sizes/font_size = 14
+text = "已出餐
+DONE"
+horizontal_alignment = 1
+vertical_alignment = 1
