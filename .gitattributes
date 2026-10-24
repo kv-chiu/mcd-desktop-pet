@@ -1,0 +1,9 @@
+# GitHub Linguist language statistics overrides
+# Mark Godot GDExtension engine headers and native artifacts as vendored
+desktop/bin/** linguist-vendored
+
+# Consistent line endings
+*.sh text eol=lf
+*.gd text eol=lf
+*.tscn text eol=lf
+*.godot text eol=lf
